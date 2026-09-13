@@ -7,9 +7,34 @@ const { refreshDemoWindows } = require('./prisma/seed');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Website mode: allow the dev frontend from any host (localhost, LAN IP, ngrok).
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+// Railway/Vercel terminate TLS upstream; without this every request reports
+// the proxy's IP and the rate limiters would share a single bucket.
+app.set('trust proxy', 1);
+
+// Fail fast rather than signing tokens with `undefined` — jsonwebtoken would
+// only throw on the first login, long after a bad deploy looked healthy.
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is not set. Refusing to start.');
+  process.exit(1);
+}
+
+// CORS_ORIGIN pins the allowed origins in production (comma-separated).
+// Without it we fall back to reflecting any origin, which is fine for local
+// dev (localhost, LAN IP, ngrok) but must not be the production posture.
+const allowedOrigins = (process.env.CORS_ORIGIN ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+  console.warn('WARNING: CORS_ORIGIN is unset in production — every origin is allowed.');
+}
+
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  credentials: true,
+}));
+app.use(express.json({ limit: '256kb' }));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

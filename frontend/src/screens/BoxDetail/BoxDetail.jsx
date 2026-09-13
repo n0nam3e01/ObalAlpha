@@ -30,7 +30,7 @@ export default function BoxDetail() {
 
   return (
     <div className="box-detail page">
-      <button className="reserve__back" onClick={() => navigate(-1)}>← Назад</button>
+      <button className="reserve__back" onClick={() => navigate(-1)}>← {t.back}</button>
 
       <div className="box-detail__hero">
         {box.photo_url ? (

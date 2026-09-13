@@ -33,6 +33,18 @@
   --warn-bg: #FFF1E9;
   --warn-text: #C2603A;
 
+  /* Rating star (amber reads as "rating" in both themes) */
+  --star: #F5A623;
+
+  /* Scrim over photos (sold-out overlay) — intentionally theme-independent,
+     since it darkens an image, not a themed surface. */
+  --scrim: rgba(0, 0, 0, 0.55);
+  --on-scrim: #FFFFFF;
+
+  /* Toggle knob stays light in both themes, like the native iOS switch. */
+  --knob: #FFFFFF;
+  --knob-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+
   /* Glass layer (floating elements only) */
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(255, 255, 255, 0.6);
@@ -90,6 +102,10 @@
   --danger-bg: #2A1614;
   --warn-bg: #281A10;
   --warn-text: #F5875A;
+
+  --star: #FFB93D;
+  --scrim: rgba(0, 0, 0, 0.62);
+  --knob: #F2EFEC;
 
   --glass-bg: rgba(18, 17, 16, 0.65);
   --glass-border: rgba(255, 255, 255, 0.07);

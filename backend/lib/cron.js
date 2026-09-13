@@ -26,12 +26,19 @@ async function expireBoxesAndCancelOrders() {
   // Auto-cancel RESERVED orders past their reserved_until, restoring stock.
   const overdueOrders = await prisma.order.findMany({
     where: { status: 'RESERVED', reserved_until: { lt: now } },
+    include: { box: { select: { status: true } } },
   });
 
   for (const order of overdueOrders) {
+    // Returning the stock without clearing SOLD_OUT would strand the box:
+    // qty_left goes back above zero but the shopper query filters on
+    // status ACTIVE, so it would never be listed again.
+    const boxData = { qty_left: { increment: order.qty } };
+    if (order.box.status === 'SOLD_OUT') boxData.status = 'ACTIVE';
+
     await prisma.$transaction([
       prisma.order.update({ where: { id: order.id }, data: { status: 'NO_SHOW' } }),
-      prisma.box.update({ where: { id: order.box_id }, data: { qty_left: { increment: order.qty } } }),
+      prisma.box.update({ where: { id: order.box_id }, data: boxData }),
     ], { timeout: 15000 });
   }
 }

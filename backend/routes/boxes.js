@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { startOfToday, endOfToday } = require('../lib/time');
+const { toId } = require('../lib/params');
 
 const router = Router();
 
@@ -17,6 +18,9 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 
 function discountPct(original, price) {
+  // Guard a zero/absent original price — it would yield Infinity or NaN and
+  // render as "−Infinity%" on the card.
+  if (!original || original <= 0 || price >= original) return 0;
   return Math.round((1 - price / original) * 100);
 }
 
@@ -53,14 +57,18 @@ router.get('/', async (req, res) => {
     },
   });
 
-  const userLat = lat ? parseFloat(lat) : null;
-  const userLng = lng ? parseFloat(lng) : null;
+  // Number.isFinite, not truthiness: latitude 0 is a real coordinate.
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+  const hasGeo = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
+  const userLat = hasGeo ? parsedLat : null;
+  const userLng = hasGeo ? parsedLng : null;
 
   boxes = boxes.map((b) => ({
     ...b,
     discount_pct: discountPct(b.original_price, b.price),
     distance_km:
-      userLat && userLng
+      hasGeo && Number.isFinite(b.venue.geo_lat) && Number.isFinite(b.venue.geo_lng)
         ? Math.round(haversineKm(userLat, userLng, b.venue.geo_lat, b.venue.geo_lng) * 10) / 10
         : null,
   }));
@@ -69,7 +77,7 @@ router.get('/', async (req, res) => {
     boxes.sort((a, b) => a.pickup_end.localeCompare(b.pickup_end));
   } else if (sort === 'cheapest') {
     boxes.sort((a, b) => a.price - b.price);
-  } else if (sort === 'nearby' && userLat) {
+  } else if (sort === 'nearby' && hasGeo) {
     boxes.sort((a, b) => (a.distance_km ?? 999) - (b.distance_km ?? 999));
   }
 
@@ -77,8 +85,11 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  const id = toId(req.params.id);
+  if (!id) return res.status(404).json({ error: 'box_not_found' });
+
   const box = await prisma.box.findUnique({
-    where: { id: parseInt(req.params.id) },
+    where: { id },
     include: {
       venue: true,
     },

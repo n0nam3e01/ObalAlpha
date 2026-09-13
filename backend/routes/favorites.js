@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { jwtMiddleware } = require('../lib/auth');
+const { toId } = require('../lib/params');
 
 const router = Router();
 
@@ -26,7 +27,9 @@ router.get('/', jwtMiddleware, async (req, res) => {
 });
 
 router.post('/:venueId', jwtMiddleware, async (req, res) => {
-  const venueId = parseInt(req.params.venueId);
+  const venueId = toId(req.params.venueId);
+  if (!venueId) return res.status(404).json({ error: 'venue_not_found' });
+
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
   if (!venue) return res.status(404).json({ error: 'venue_not_found' });
 
@@ -40,7 +43,9 @@ router.post('/:venueId', jwtMiddleware, async (req, res) => {
 });
 
 router.delete('/:venueId', jwtMiddleware, async (req, res) => {
-  const venueId = parseInt(req.params.venueId);
+  const venueId = toId(req.params.venueId);
+  if (!venueId) return res.json({ ok: true });
+
   await prisma.favorite.deleteMany({
     where: { user_id: req.user.userId, venue_id: venueId },
   });

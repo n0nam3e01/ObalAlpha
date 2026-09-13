@@ -23,7 +23,6 @@
 @import './screens/Orders/Orders.css';
 @import './screens/Profile/Profile.css';
 @import './screens/Favorites/Favorites.css';
-@import './screens/VenueDashboard/VenueDashboard.css';
 @import './screens/VenueDetail/VenueDetail.css';
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

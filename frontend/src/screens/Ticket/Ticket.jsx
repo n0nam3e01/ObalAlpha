@@ -161,7 +161,7 @@ export default function Ticket() {
         <div className="ticket__perforated" />
 
         <div className="ticket__code-section">
-          <p className="ticket__code-label">КОД САМОВЫВОЗА</p>
+          <p className="ticket__code-label">{t.pickupCodeLabel}</p>
           <p className="ticket__code">
             {String(order.pickup_code).split('').map((d, i) => (
               <span key={i} className="ticket__code-digit" style={{ animationDelay: `${i * 70}ms` }}>{d}</span>
@@ -177,7 +177,7 @@ export default function Ticket() {
             <span className="ticket__meta-value">{venue?.name}</span>
           </div>
           <div className="ticket__meta-row">
-            <span className="ticket__meta-label">Адрес</span>
+            <span className="ticket__meta-label">{t.addressLabel}</span>
             <a className="ticket__meta-value ticket__meta-value--link" href={mapsUrl} target="_blank" rel="noreferrer">
               {venue?.address} {t.openIn2GIS}
             </a>

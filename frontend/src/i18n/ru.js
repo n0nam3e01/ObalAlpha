@@ -87,8 +87,13 @@ const ru = {
   confirmReserve: 'Забронировать',
   soldOutToast: 'Этот бокс только что разобрали',
 
+  // Common
+  back: 'Назад',
+  addressLabel: 'Адрес',
+
   // Ticket
   ticketTitle: 'Бокс забронирован',
+  pickupCodeLabel: 'КОД САМОВЫВОЗА',
   showCode: 'Покажите код на кассе при получении',
   openIn2GIS: '🗺️ Открыть в 2ГИС',
   payAtVenueLabel: 'Оплата на месте',

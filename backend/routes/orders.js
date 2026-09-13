@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { jwtMiddleware } = require('../lib/auth');
+const { toId } = require('../lib/params');
 
 const router = Router();
 
@@ -11,10 +12,18 @@ function generatePickupCode() {
 // POST /api/orders — reserve a box (atomic qty decrement).
 router.post('/', jwtMiddleware, async (req, res) => {
   const { box_id, qty = 1 } = req.body;
-  if (!box_id) return res.status(400).json({ error: 'box_id_required' });
+
+  // parseInt('abc') is NaN, and every NaN comparison is false — so a bare
+  // range check would let garbage through into the query. Test the number.
+  const parsedBoxId = parseInt(box_id, 10);
+  if (!Number.isInteger(parsedBoxId) || parsedBoxId < 1) {
+    return res.status(400).json({ error: 'box_id_required' });
+  }
 
   const parsedQty = parseInt(qty, 10);
-  if (parsedQty < 1 || parsedQty > 3) return res.status(400).json({ error: 'qty_invalid' });
+  if (!Number.isInteger(parsedQty) || parsedQty < 1 || parsedQty > 3) {
+    return res.status(400).json({ error: 'qty_invalid' });
+  }
 
   try {
     // Snapshot the buyer's contact info outside the transaction to keep the
@@ -23,7 +32,7 @@ router.post('/', jwtMiddleware, async (req, res) => {
 
     const order = await prisma.$transaction(async (tx) => {
       const box = await tx.box.findFirst({
-        where: { id: parseInt(box_id), status: 'ACTIVE', qty_left: { gte: parsedQty } },
+        where: { id: parsedBoxId, status: 'ACTIVE', qty_left: { gte: parsedQty } },
         include: { venue: { select: { commission_pct: true } } },
       });
       if (!box) throw Object.assign(new Error('sold_out'), { code: 'SOLD_OUT' });
@@ -84,8 +93,11 @@ router.get('/', jwtMiddleware, async (req, res) => {
 
 // GET /api/orders/:id — one order (must belong to the user).
 router.get('/:id', jwtMiddleware, async (req, res) => {
+  const id = toId(req.params.id);
+  if (!id) return res.status(404).json({ error: 'order_not_found' });
+
   const order = await prisma.order.findFirst({
-    where: { id: parseInt(req.params.id), user_id: req.user.userId },
+    where: { id, user_id: req.user.userId },
     include: { box: { include: { venue: true } }, rating: true },
   });
   if (!order) return res.status(404).json({ error: 'order_not_found' });
@@ -94,15 +106,24 @@ router.get('/:id', jwtMiddleware, async (req, res) => {
 
 // POST /api/orders/:id/cancel — cancel a reservation and restore stock.
 router.post('/:id/cancel', jwtMiddleware, async (req, res) => {
+  const id = toId(req.params.id);
+  if (!id) return res.status(404).json({ error: 'order_not_found' });
+
   const order = await prisma.order.findFirst({
-    where: { id: parseInt(req.params.id), user_id: req.user.userId },
+    where: { id, user_id: req.user.userId },
+    include: { box: { select: { status: true } } },
   });
   if (!order) return res.status(404).json({ error: 'order_not_found' });
   if (order.status !== 'RESERVED') return res.status(400).json({ error: 'cannot_cancel' });
 
+  // Returning stock re-opens a box that sold out, but must not resurrect one
+  // whose pickup window already closed — that box stays EXPIRED.
+  const boxData = { qty_left: { increment: order.qty } };
+  if (order.box.status === 'SOLD_OUT') boxData.status = 'ACTIVE';
+
   await prisma.$transaction([
     prisma.order.update({ where: { id: order.id }, data: { status: 'CANCELLED' } }),
-    prisma.box.update({ where: { id: order.box_id }, data: { qty_left: { increment: order.qty }, status: 'ACTIVE' } }),
+    prisma.box.update({ where: { id: order.box_id }, data: boxData }),
   ], { timeout: 15000 });
 
   res.json({ ok: true });

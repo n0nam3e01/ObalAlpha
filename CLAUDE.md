@@ -1,8 +1,10 @@
-# CLAUDE.md — FoodBox
+# CLAUDE.md — Обал (öbal)
 
 ## Назначение
 
-FoodBox — Telegram Mini App маркетплейс нераспроданной еды со скидкой в Астане. Заведения публикуют боксы остатков дня; пользователь резервирует бокс, получает 4-значный код самовывоза, приходит и платит на кассе.
+Обал — Telegram Mini App маркетплейс нераспроданной еды со скидкой в Астане. Заведения публикуют боксы остатков дня; пользователь резервирует бокс, получает 4-значный код самовывоза, приходит и платит на кассе.
+
+Папка репозитория исторически называется `foodbox/` — это прежнее рабочее имя проекта. В UI и текстах бренд всегда **Обал / öbal**.
 
 ## Tech Stack
 
@@ -11,7 +13,7 @@ FoodBox — Telegram Mini App маркетплейс нераспроданно�
 | Frontend | React 19 + Vite, plain CSS, React Router v7 |
 | Backend | Node.js + Express 5, Prisma ORM |
 | Database | PostgreSQL (Supabase) |
-| Auth | Telegram initData → HMAC-SHA256 → JWT |
+| Auth | имя + телефон → JWT (v0 pilot, **без верификации** — см. «Аутентификация») |
 | Анимации | только CSS transitions |
 
 ## Структура
@@ -30,15 +32,22 @@ foodbox/
         AuthContext.jsx     — AuthProvider / useAuth
         ToastContext.jsx    — ToastProvider / useToast
       components/           — переиспользуемые компоненты
+        PromoCarousel/      — свайп-баннеры на главной (тап → сортировка + скролл)
+        Accordion/          — FAQ-аккордеон (CSS-пружина, без JS-замеров)
       screens/              — экраны приложения
+        Venue/              — B2B-панель заведения (единственная; /venue)
+        VenueDetail/        — потребительская страница заведения (/venue/:id)
   backend/
     lib/
       prisma.js             — синглтон PrismaClient
-      auth.js               — validateInitData + jwtMiddleware
+      auth.js               — signJwt + jwtMiddleware
+      params.js             — toId / toInt (безопасный парсинг user input)
+      rateLimit.js          — in-memory лимитер для credential-эндпоинтов
       telegram.js           — sendMessage(telegramId, html)
-      cron.js               — expireBoxes, autoCancelOrders, notifyFavorites
+      time.js               — Астана UTC+5: startOfToday, hhmmToMinutes, ...
+      cron.js               — expireBoxes + autoCancelOrders (каждые 5 мин)
     routes/
-      auth.js               — POST /api/auth/telegram
+      auth.js               — POST /api/auth/phone
       boxes.js              — GET /api/boxes, GET /api/boxes/:id
       orders.js             — POST/GET/cancel /api/orders
       favorites.js          — GET/POST/DELETE /api/favorites
@@ -58,7 +67,7 @@ foodbox/
 - Никаких градиентов `from-purple / to-blue` и неоновых акцентов. Все цвета — только через токены `var(--)`.
 - Не центрировать всё подряд (`text-align: center` на каждом блоке). Контент выровнен по левой оси, асимметрия — намеренная.
 - Glassmorphism только на плавающих элементах (см. «Liquid Glass» ниже). Стекло на обычных карточках боксов — запрещено.
-- Emoji не использовать как иконки интерфейса. Иконки — SVG или lucide-react. Исключение: placeholder-фон карточки без фото (`.box-card__emoji`) — это категорийный декор, не UI-иконка.
+- Emoji не использовать как иконки интерфейса. Иконки — только инлайн-SVG (библиотек иконок в проекте нет). Исключения — декор, а не UI-иконки: placeholder карточки без фото (`.box-card__ph-emoji`) и парящая еда в `PromoCarousel`.
 - Никаких светящихся блобов и градиентных пятен на фоне.
 - Никакого `gradient-text` на заголовках.
 - Никаких хардкоженных хексов вне `tokens.css`. Только `var(--)`.
@@ -67,11 +76,13 @@ foodbox/
 
 ### Визуальное направление
 
-Эталон — Too Good To Go: тепло, понятно, без детскости. Фото еды — главный визуальный элемент, текст вторичен.
+Ориентир по вёрстке и плотности — Яндекс Go: чистая шапка, серая search-пилюля, тёмный промо-блок со спецпредложениями. По тону — Too Good To Go: тепло, понятно, без детскости.
 
-- **`--green`** (#0E8F5A) = «спасти еду», бренд, экологичность.
-- **`--primary`** (#FF6A1A) = цена, primary-CTA, срочность, выгода.
+- **`--primary`** (#C96D6A) = коралл из логотипа öbal. Цена, primary-CTA, активные состояния.
+- **`--green`** (#167A4A) = «спасти еду», скидочные бейджи, экологичность.
+- **`--promo-bg`** (#241715) = тёмный блок спецпредложений (промо-карусель на главной).
 - Иерархия читается мгновенно: `PriceBlock` — крупнейший элемент карточки, за ним время самовывоза и дистанция.
+- Заведений пока нет, поэтому `BoxCard` **не показывает название бокса и заведения** — только категория, дистанция, цена и время.
 - Дружелюбно, не инфантильно. Никакой мультяшности.
 
 ### Дизайн-токены
@@ -82,52 +93,50 @@ foodbox/
 
 | Роль | Токен | Light | Dark |
 |------|-------|-------|------|
-| Бренд / «зелёный» | `--green` | `#0E8F5A` | `#2BBE82` |
-| Фон зелёного | `--green-bg` | `#E7F5EE` | `#14271E` |
-| Primary CTA / цена / срочность | `--primary` | `#FF6A1A` | `#FF7A2F` |
-| Тёмный variant primary | `--primary-d` | `#E85600` | `#FF6A1A` |
-| Текст на primary | `--on-primary` | `#FFFFFF` | `#17161A` |
-| Основной текст | `--ink` | `#1B1A17` | `#F4EFE8` |
-| Вторичный текст | `--muted` | `#8A857C` | `#9A938A` |
-| Разделитель / border | `--line` | `#F0EAE0` | `#2C2A30` |
-| Фон экрана | `--bg` | `#FBF7F1` | `#17161A` |
-| Поверхность карточки | `--surface` | `#FFFFFF` | `#211F24` |
-| Вторичная поверхность | `--surface-2` | `#F7F1E8` | `#2A282F` |
-| Опасность | `--danger` / `--danger-bg` | — | — |
-| Предупреждение | `--warn-text` / `--warn-bg` | — | — |
+| Primary CTA / цена / акцент | `--primary` | `#C96D6A` | `#D98A87` |
+| Тёмный variant primary | `--primary-d` | `#AE514C` | `#C96D6A` |
+| Коралловая подложка | `--primary-soft` | `#FBEDEC` | `#2A1A18` |
+| Текст на primary | `--on-primary` | `#FFFFFF` | `#1C1B1A` |
+| Скидка / «спасти еду» | `--green` | `#167A4A` | `#2BB673` |
+| Фон зелёного | `--green-bg` | `#E7F4EC` | `#16241D` |
+| Промо-блок (фон) | `--promo-bg` / `--promo-bg-2` | `#241715` / `#3C2521` | `#1A1110` / `#2E1C19` |
+| Текст на промо | `--promo-fg` / `--promo-muted` | `#FBF1EF` | `#F2EFEC` |
+| B2B-хедер (алиас промо) | `--brand` / `--on-brand` | → promo | → promo |
+| Основной текст | `--ink` | `#1C1B1A` | `#F2EFEC` |
+| Вторичный текст | `--muted` | `#8A8782` | `#948F89` |
+| Разделитель / border | `--line` | `#ECEAE6` | `#2A2724` |
+| Фон экрана | `--bg` | `#FFFFFF` | `#121110` |
+| Поверхность карточки | `--surface` | `#FFFFFF` | `#1C1A18` |
+| Вторичная поверхность | `--surface-2` | `#F2F1ED` | `#25221F` |
+| Опасность | `--danger` / `--danger-bg` | `#D14B3C` | `#E5705F` |
+| Предупреждение | `--warn-text` / `--warn-bg` | `#C2603A` | `#F5875A` |
+| Звезда рейтинга | `--star` | `#F5A623` | `#FFB93D` |
+| Скрим над фото | `--scrim` / `--on-scrim` | `rgba(0,0,0,.55)` | `rgba(0,0,0,.62)` |
+| Ручка тоггла | `--knob` / `--knob-shadow` | `#FFFFFF` | `#F2EFEC` |
 
-**Добавить в `tokens.css`** — glass-токены (только для плавающих элементов):
+Glass-токены (`--glass-bg`, `--glass-border`, `--glass-blur`, `--shadow-float`) уже определены в `tokens.css`, утилита `.glass` — в `index.css`.
 
-```css
-:root {
-  --glass-bg: rgba(251, 247, 241, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-blur: blur(20px) saturate(180%);
-  --shadow-float: 0 8px 32px rgba(40, 30, 15, 0.14);
-}
-[data-theme="dark"] {
-  --glass-bg: rgba(23, 22, 26, 0.60);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --shadow-float: 0 8px 32px rgba(0, 0, 0, 0.45);
-}
-```
+Если нужен цвет, которого нет в таблице, — **сначала заводится токен**, потом используется. Хардкод хекса в компонентном CSS запрещён (исключение: `color-mix()` от существующих токенов).
 
 #### Типографика
 
-Шрифты заданы в `tokens.css`:
-- `--font-ui: 'Manrope', system-ui, sans-serif` — основной интерфейс
+Шрифты заданы в `tokens.css` и подключены в `index.html` (Google Fonts):
+- `--font-ui: 'Golos Text', system-ui, sans-serif` — основной интерфейс. Выбран как ближайший свободный аналог Яндекс-шрифта с полной кириллицей (сам Yandex Sans проприетарный).
 - `--font-mono: 'Space Mono', monospace` — код самовывоза, технические лейблы
-
-Шкала кеглей: **11 / 13 / 15 / 17 / 20 / 28**. Промежуточные значения не добавлять.
 
 | Элемент | Размер | Вес |
 |---------|--------|-----|
-| Цена бокса (`PriceBlock`) | 28px | 700 |
-| Название заведения / бокса | 17px | 600 |
-| Основной текст | 15px | 400 |
-| Мета (время, дистанция, `--muted`) | 13px | 400 |
-| Лейблы категорий, капслоки | 11px | 700 |
+| Заголовок экрана | 26px | 800 |
+| Заголовок промо-баннера | 21px | 800 |
+| Цена бокса (`PriceBlock--large`) | 24px | 800 |
+| Цена в списке (`PriceBlock`) | 18px | 800 |
+| Подзаголовок / имя | 18–19px | 800 |
+| Основной текст | 15px | 400–600 |
+| Мета (время, дистанция, `--muted`) | 13px | 400–500 |
+| Лейблы капслоком | 12px | 700–800 |
 | Код самовывоза (`--font-mono`) | 28–34px, `letter-spacing: 0.15em` | 700 |
+
+Вес 800–900 — фирменная черта: заголовки и цены всегда жирные.
 
 #### Сетка и отступы
 
@@ -138,10 +147,10 @@ foodbox/
 
 | Токен | Значение | Применение |
 |-------|---------|-----------|
-| `--radius-card` | `22px` | `BoxCard`, `Sheet`, модалки |
-| `--radius-input` | `16px` | Инпуты, `PrimaryButton`, `GhostButton` |
-| `--radius-btn` | `16px` | Кнопки |
-| `--radius-pill` | `999px` | `QtyBadge`, `CategoryChips`, аватары |
+| `--radius-card` | `20px` | `BoxCard`, `Sheet`, промо-слайды, аккордеон |
+| `--radius-input` | `16px` | Инпуты |
+| `--radius-btn` | `14px` | Кнопки, CTA на карточке |
+| `--radius-pill` | `999px` | `QtyBadge`, `CategoryChips`, search-пилюля, аватары |
 
 Только `--radius-pill` для аватаров и маленьких бейджей. Не применять произвольные значения.
 
@@ -219,13 +228,17 @@ Telegram WebView на iOS (WebKit) **не поддерживает** SVG-реф�
 
 ### Паттерны компонентов
 
-**`BoxCard`** — фото сверху (height 160px, `object-fit: cover`), `QtyBadge` + discount-бейдж поверх фото. Body: название заведения (11px, `--muted`, uppercase), название бокса (16px, 800), мета-строка (12px, `--muted`), footer с `PriceBlock` и `TimeWindowChip`. Нет glass — `--surface` + `--shadow-card`. `.pressable` на всей карточке. Вход: `fade-rise` с stagger.
+**`BoxCard`** — hero-область `aspect-ratio: 16/10`. Если фото нет — категорийный эмодзи на мягкой подложке (`color-mix` от `--primary` / `--green`), классы `.box-card__placeholder--<category>` и `.box-card__ph-emoji`. Поверх: `QtyBadge` (слева сверху), зелёный discount-бейдж (справа сверху), кнопка избранного (справа снизу). Body: `PriceBlock--large` + `TimeWindowChip`, мета-строка «категория · дистанция», затем CTA-кнопка «Забрать» (`--primary`). **Названия бокса и заведения не рендерятся** — заведений ещё нет. Нет glass — `--surface` + `--shadow-card`. Вход: `fade-rise` со stagger.
 
-**`PriceBlock`** — цена крупно (28px, 700, `--ink`), зачёркнутая старая цена (`--muted`). Цена — самый крупный элемент карточки. Не красить цену в `--primary` без особой причины.
+**`PriceBlock`** — цена цветом `--primary` (коралл), зачёркнутая старая цена `--muted`. Вариант `--large` (24px) — на карточке и в детали; обычный (18px) — в списках.
+
+**`PromoCarousel`** — тёмные промо-слайды на главной, горизонтальный `scroll-snap`. Весь слайд — один тап-таргет: задаёт сортировку и скроллит к списку. Декор — парящие эмодзи еды (`soft-float`) и SVG-искры. Точки-индикаторы под каруселью.
+
+**`Accordion`** — FAQ на «Профиле». Высота через `grid-template-rows: 0fr → 1fr` с `--ease-spring` (никаких JS-замеров и ResizeObserver). Состояние — атрибут `data-state="open|closed"`. Соседние закрытые строки сливаются в одну поверхность, открытая отделяется зазором.
 
 **`PrimaryButton`** — `--primary` фон, `--on-primary` текст, `--radius-btn`, min-height 48px. Sticky-версия внизу экрана — оборачивается в `.glass`-плашку с `padding-bottom: env(safe-area-inset-bottom)`. `.pressable`.
 
-**`BottomNav`** — fixed, `calc(--nav-h + env(safe-area-inset-bottom))`, `z-index: 50`. Активная иконка и лейбл: `--primary`. Анимация активации: `nav-bounce` + `label-fade`. Переход на `.glass` — апгрейд при рефакторинге.
+**`BottomNav`** — fixed, `calc(--nav-h + env(safe-area-inset-bottom))`, `z-index: 50`, стекло (`.glass`-токены). Активная иконка и лейбл: **`--green`** (коралл зарезервирован под цену и CTA, чтобы акцент не размывался). Анимация активации: `nav-bounce` + `label-fade`.
 
 **`Sheet`** (bottom sheet) — `--radius-card` сверху, drag-handle. Вход: `translateY(100%) → 0` с `--dur-large --ease-inout`. Хедер получает `.glass` при прокрутке контента под ним.
 
@@ -253,11 +266,24 @@ Telegram WebView на iOS (WebKit) **не поддерживает** SVG-реф�
 
 ## Аутентификация
 
-1. Frontend отправляет `initData` (строка от Telegram) на `POST /api/auth/telegram`
+### Как есть сейчас (v0 pilot)
+
+1. Frontend отправляет `{ name, phone }` на `POST /api/auth/phone`
+2. Backend делает upsert `User` по `phone` (уникальное поле) и возвращает JWT (payload: `{ userId }`, срок 30 дней)
+3. Frontend кладёт токен в `localStorage` (ключ `obal_token`) и шлёт как `Authorization: Bearer ...`
+4. Эндпоинт ограничен rate-лимитом (8 запросов/мин на IP) в `lib/rateLimit.js`
+
+### ⚠️ Известная дыра — починить до реальных пользователей
+
+**Владение номером телефона ничем не подтверждается.** Кто угодно отправляет чужой номер и получает JWT этого аккаунта вместе с историей заказов, именем и статистикой. Rate-лимит только замедляет перебор, но не закрывает проблему.
+
+Планируемое решение — Telegram initData (бот и так есть):
+1. Frontend шлёт `initData` на `POST /api/auth/telegram`
 2. Backend валидирует HMAC-SHA256: `key = HMAC("WebAppData", botToken)`, `hash = HMAC(key, dataCheckString)`
-3. Проверяет `auth_date` — отклоняет если старше 24 часов
-4. Upsert User по `telegram_id`, возвращает JWT (payload: `{ userId, telegramId }`)
-5. Frontend хранит токен в памяти (не localStorage), прикладывает как `Authorization: Bearer ...`
+3. Проверяет `auth_date` — отклоняет старше 24 часов
+4. Upsert `User` по `telegram_id` (поле в схеме уже есть), возвращает JWT
+
+Телефон после этого становится обычным полем профиля, а не учёткой. Вход по телефону остаётся только как запасной путь — уже с OTP.
 
 ## Аутентификация заведений (v0 pilot)
 
@@ -292,6 +318,15 @@ Favorite   ← unique(user_id, venue_id)
 Rating     ← только после PICKED_UP, unique per order
 ```
 
+## Подключение CSS
+
+В проекте два способа, оба рабочие — не смешивать в рамках одного компонента:
+
+1. **Агрегация в `index.css`** — исторический способ, большинство компонентов и экранов (`@import './components/.../X.css'`).
+2. **Самоимпорт из JSX** — `import './X.css'` в самом компоненте. Так сделаны `Accordion`, `PromoCarousel`, `CategoryChips`, `MapView`, `SegmentedControl`, `Splash`, `Home`, `Reserve`, `Venue`.
+
+Для новых компонентов предпочтительнее **самоимпорт**: стиль уезжает вместе с компонентом и не остаётся висеть в `index.css` после удаления. При удалении компонента всегда проверять, не остался ли `@import` в `index.css` — забытый импорт на удалённый файл ломает сборку, а импорт «живого» CSS мёртвого компонента молча раздувает бандл.
+
 ## ЖЁСТКИЕ ПРАВИЛА (не нарушать)
 
 1. **Весь UI-текст — из `src/i18n/ru.js`**. Никаких строк на русском прямо в JSX.
@@ -303,6 +338,8 @@ Rating     ← только после PICKED_UP, unique per order
 7. **Максимум 3 тапа** от главного экрана до «Забронировать».
 8. **Атомарное декрементирование** qty через `prisma.$transaction` — никогда не декрементировать без проверки qty_left.
 9. **Сервер всегда перепроверяет** статус и qty при резервации (клиент не доверяется).
+10. **Любой user input, который становится числом, — через `lib/params.js`** (`toId` / `toInt`). Голый `parseInt` даёт `NaN`, а все сравнения с `NaN` ложны, поэтому проверка вида `if (n < 1)` пропускает мусор в Prisma и превращает 400 в 500.
+11. **Возврат остатка = возврат статуса.** Если заказ отменяется (вручную или крон-джобой), инкремент `qty_left` обязан снимать `SOLD_OUT` — иначе бокс остаётся невидимым для покупателей навсегда. Но `EXPIRED` не воскрешать.
 
 ## Команды
 
