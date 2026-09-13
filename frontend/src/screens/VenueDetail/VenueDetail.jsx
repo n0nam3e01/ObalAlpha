@@ -4,7 +4,7 @@ import { apiFetch } from '../../lib/api';
 import BoxCard from '../../components/BoxCard/BoxCard';
 import EmptyState from '../../components/EmptyState/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton/Skeleton';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 export default function VenueDetail() {
   const { id } = useParams();

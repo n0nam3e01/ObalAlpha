@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import BoxCard from '../../components/BoxCard/BoxCard';
 import { discountPct } from '../../lib/format';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const TYPES = [{ key: 'SURPRISE', label: t.surprise }, { key: 'ITEMIZED', label: t.itemized }];
 const CATEGORIES = [

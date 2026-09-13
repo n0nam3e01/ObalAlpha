@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 // Clean B2B login: one field accepting a 6-char code or a pasted magic link.
 export default function VenueLogin({ onSubmit }) {

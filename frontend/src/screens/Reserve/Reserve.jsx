@@ -6,7 +6,7 @@ import { formatTenge } from '../../lib/format';
 import { hapticImpact, hapticSuccess, hapticError } from '../../lib/haptics';
 import TimeWindowChip from '../../components/TimeWindowChip/TimeWindowChip';
 import { useToast } from '../../context/ToastContext';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import './Reserve.css';
 
 export default function Reserve() {

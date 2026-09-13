@@ -90,6 +90,8 @@ const ru = {
   // Common
   back: 'Назад',
   addressLabel: 'Адрес',
+  hoursShort: 'ч',
+  minutesShort: 'мин',
 
   // Ticket
   ticketTitle: 'Бокс забронирован',

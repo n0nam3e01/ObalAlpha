@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import PriceBlock from '../PriceBlock/PriceBlock';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import './MapView.css';
 
 const ASTANA_CENTER = [51.128, 71.4304];

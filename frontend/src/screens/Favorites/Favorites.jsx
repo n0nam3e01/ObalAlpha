@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch, isAuthed } from '../../lib/api';
 import EmptyState from '../../components/EmptyState/EmptyState';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 export default function Favorites() {
   const navigate = useNavigate();

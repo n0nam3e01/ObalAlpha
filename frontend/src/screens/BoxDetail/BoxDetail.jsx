@@ -6,7 +6,7 @@ import TimeWindowChip from '../../components/TimeWindowChip/TimeWindowChip';
 import QtyBadge from '../../components/QtyBadge/QtyBadge';
 import { SkeletonCard } from '../../components/Skeleton/Skeleton';
 import { formatTenge } from '../../lib/format';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 export default function BoxDetail() {
   const { id } = useParams();

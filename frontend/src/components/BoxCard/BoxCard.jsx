@@ -6,7 +6,7 @@ import TimeWindowChip from '../TimeWindowChip/TimeWindowChip';
 import { formatDistance } from '../../lib/format';
 import { apiFetch, isAuthed } from '../../lib/api';
 import useReducedMotion from '../../lib/useReducedMotion';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const CATEGORY_LABEL = {
   BAKERY: t.catBakery, PREPARED: t.catPrepared, SUPERMARKET: t.catSupermarket,

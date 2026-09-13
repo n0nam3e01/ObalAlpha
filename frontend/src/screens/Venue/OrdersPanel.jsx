@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { hapticSuccess, hapticError } from '../../lib/haptics';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 function statusPill(status) {
   if (status === 'PICKED_UP') return { cls: 'done', label: `✓ ${t.vbIssued}` };

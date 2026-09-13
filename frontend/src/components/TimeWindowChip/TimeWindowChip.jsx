@@ -1,5 +1,5 @@
 import { formatPickup, formatTimeWindow } from '../../lib/format';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 // `date` (box.pickup_date) is optional: when present we apply the display rule
 // "Сегодня HH:MM–HH:MM". `compact` drops the day prefix for tight layouts.

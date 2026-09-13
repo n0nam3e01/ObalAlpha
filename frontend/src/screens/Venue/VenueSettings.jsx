@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { formatTenge } from '../../lib/format';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const CATEGORIES = [
   { key: 'BAKERY', label: t.catBakery }, { key: 'CAFE', label: t.catCafe },

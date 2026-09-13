@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import './CategoryChips.css';
 
 const CATEGORIES = [

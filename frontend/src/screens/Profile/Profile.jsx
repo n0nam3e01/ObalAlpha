@@ -9,7 +9,7 @@ import { resolveTheme, setTheme } from '../../lib/theme';
 import SegmentedControl from '../../components/SegmentedControl/SegmentedControl';
 import Sheet from '../../components/Sheet/Sheet';
 import Accordion from '../../components/Accordion/Accordion';
-import t from '../../i18n/ru';
+import t, { getLang, setLang } from '../../i18n';
 
 const LANGS = [
   { key: 'ru', label: t.langRu },
@@ -56,6 +56,13 @@ export default function Profile() {
   function toggleTheme(next) {
     setDark(next);
     setTheme(next ? 'dark' : 'light');
+  }
+
+  // Save the choice server-side (so it survives a new device) and locally,
+  // then reload — the dictionary is bound at import time in i18n/index.js.
+  async function changeLanguage(lang) {
+    await patchMe({ language: lang });
+    if (setLang(lang)) window.location.reload();
   }
 
   // ── Guest view ──
@@ -128,8 +135,8 @@ export default function Profile() {
       <div className="profile__rows">
         <div className="profile__row profile__row--col">
           <span className="profile__row-label">{t.langLabel}</span>
-          <SegmentedControl segments={LANGS} value={user.language} size="sm"
-            onChange={(lang) => patchMe({ language: lang })} />
+          <SegmentedControl segments={LANGS} value={getLang()} size="sm"
+            onChange={changeLanguage} />
         </div>
 
         <div className="profile__row">

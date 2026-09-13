@@ -57,30 +57,31 @@ model User {
 }
 
 model Venue {
-  id             Int           @id @default(autoincrement())
-  name           String
-  category       VenueCategory
-  description    String        @default("")
-  address        String
-  district       String        @default("")
-  geo_lat        Float
-  geo_lng        Float
-  photo_url      String?
-  contact_phone  String
-  kaspi_info     String        @default("")
-  payout_details String        @default("")
-  venue_token    String        @unique
-  access_code    String?       @unique
+  id                   Int           @id @default(autoincrement())
+  name                 String
+  category             VenueCategory
+  description          String        @default("")
+  address              String
+  district             String        @default("")
+  geo_lat              Float
+  geo_lng              Float
+  photo_url            String?
+  contact_phone        String
+  kaspi_info           String        @default("")
+  payout_details       String        @default("")
+  venue_token          String        @unique
+  access_code          String?       @unique
   default_pickup_start String?
   default_pickup_end   String?
-  commission_pct Int           @default(20)
-  rating_avg     Float         @default(0)
-  rating_count   Int           @default(0)
-  is_active      Boolean       @default(true)
-  created_at     DateTime      @default(now())
+  commission_pct       Int           @default(20)
+  rating_avg           Float         @default(0)
+  rating_count         Int           @default(0)
+  is_active            Boolean       @default(true)
+  created_at           DateTime      @default(now())
 
   boxes     Box[]
   favorites Favorite[]
+  ratings   Rating[]
 }
 
 model Box {
@@ -103,6 +104,13 @@ model Box {
   created_at     DateTime  @default(now())
 
   orders Order[]
+
+  // Shopper feed: status + today's pickup_date is the hot filter in
+  // routes/boxes.js and lib/cron.js.
+  @@index([status, pickup_date])
+  // Venue panel lists its own boxes for the day; also covers the FK, which
+  // Postgres does not index on its own.
+  @@index([venue_id, pickup_date])
 }
 
 model Order {
@@ -122,6 +130,15 @@ model Order {
   created_at     DateTime    @default(now())
 
   rating Rating?
+
+  // "My orders", newest first.
+  @@index([user_id, created_at])
+  // Cron sweep for overdue reservations.
+  @@index([status, reserved_until])
+  // Counter flow: look up an order by the code the shopper shows.
+  @@index([pickup_code])
+  // FK — needed for the venue-scoped order queries and joins.
+  @@index([box_id])
 }
 
 model Favorite {
@@ -133,6 +150,9 @@ model Favorite {
   created_at DateTime @default(now())
 
   @@unique([user_id, venue_id])
+  // The unique above already indexes user_id first; this covers the other
+  // direction (a venue's followers) and the FK.
+  @@index([venue_id])
 }
 
 model Rating {
@@ -142,7 +162,12 @@ model Rating {
   order_id   Int      @unique
   order      Order    @relation(fields: [order_id], references: [id])
   venue_id   Int
+  venue      Venue    @relation(fields: [venue_id], references: [id])
   stars      Int
   comment    String?
   created_at DateTime @default(now())
+
+  // routes/ratings.js re-aggregates every rating of a venue after each insert.
+  @@index([venue_id])
+  @@index([user_id])
 }

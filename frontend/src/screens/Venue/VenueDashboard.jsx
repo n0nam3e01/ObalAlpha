@@ -5,7 +5,7 @@ import { formatTenge } from '../../lib/format';
 import { hapticSuccess } from '../../lib/haptics';
 import useCountUp from '../../lib/useCountUp';
 import { venueFetch, venueAuth, getVenueToken, setVenueToken } from '../../lib/venueApi';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import VenueLogin from './VenueLogin';
 import AddBoxForm from './AddBoxForm';
 import OrdersPanel from './OrdersPanel';

@@ -7,7 +7,7 @@ import SegmentedControl from '../../components/SegmentedControl/SegmentedControl
 import EmptyState from '../../components/EmptyState/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton/Skeleton';
 import MapView from '../../components/MapView/MapView';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import './Home.css';
 
 const SORTS = [

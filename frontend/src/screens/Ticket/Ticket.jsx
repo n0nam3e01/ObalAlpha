@@ -7,7 +7,7 @@ import useReducedMotion from '../../lib/useReducedMotion';
 import GhostButton from '../../components/GhostButton/GhostButton';
 import Rating from '../../components/Rating/Rating';
 import { useToast } from '../../context/ToastContext';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const STATUS_LABEL = {
   RESERVED: t.statusReserved,
@@ -32,7 +32,9 @@ function humanRemaining(mins) {
   if (mins == null) return null;
   const hrs = Math.floor(mins / 60);
   const rem = mins % 60;
-  return hrs > 0 ? `${hrs} ч ${rem} мин` : `${rem} мин`;
+  return hrs > 0
+    ? `${hrs} ${t.hoursShort} ${rem} ${t.minutesShort}`
+    : `${rem} ${t.minutesShort}`;
 }
 
 // Animated checkmark — strokes itself via stroke-dashoffset (see Ticket.css).
@@ -46,14 +48,14 @@ function Checkmark() {
 }
 
 // One-shot confetti, max 12 particles, never loops.
+// Colours come from :nth-child rules in Ticket.css so the palette stays in
+// tokens — the old inline array still held the retired orange brand colours.
 function Confetti() {
-  const colors = ['#FF6A1A', '#2BBE82', '#FFC857', '#E0304A', '#7C3AED', '#34B3F1'];
-  const pieces = Array.from({ length: 12 }, (_, i) => ({
+  const pieces = Array.from({ length: 12 }, () => ({
     cx: `${(Math.random() * 2 - 1) * 60}px`,
     cy: `${60 + Math.random() * 50}px`,
     cr: `${Math.random() * 360}deg`,
     left: `${10 + Math.random() * 80}%`,
-    color: colors[i % colors.length],
     delay: `${Math.random() * 120}ms`,
   }));
   return (
@@ -64,7 +66,6 @@ function Confetti() {
           className="ticket__confetti-piece"
           style={{
             left: p.left,
-            background: p.color,
             animationDelay: p.delay,
             '--cx': p.cx, '--cy': p.cy, '--cr': p.cr,
           }}

@@ -4,7 +4,7 @@ import { apiFetch, isAuthed } from '../../lib/api';
 import { formatPickup } from '../../lib/format';
 import EmptyState from '../../components/EmptyState/EmptyState';
 import { SkeletonCard } from '../../components/Skeleton/Skeleton';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const STATUS_LABEL = {
   RESERVED: t.statusReserved,

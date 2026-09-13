@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 import './PromoCarousel.css';
 
 // Yandex-Go-style swipeable promo banners. Each slide is one big tap target

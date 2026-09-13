@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import t from '../../i18n/ru';
+import t from '../../i18n';
 
 const ICONS = {
   home: (
