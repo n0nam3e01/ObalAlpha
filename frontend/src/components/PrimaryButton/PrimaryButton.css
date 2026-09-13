@@ -1,0 +1,41 @@
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: background var(--dur-small) var(--ease-out),
+              transform var(--dur-micro) var(--ease-out),
+              box-shadow var(--dur-small) var(--ease-out);
+  min-height: 52px;
+}
+/* Press: scale down + a soft tangerine glow pulse on the primary CTA. */
+.primary-btn:active {
+  background: var(--primary-d);
+  transform: scale(0.97);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+.primary-btn--full { width: 100%; }
+.primary-btn--disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+/* Disabled state never animates. */
+.primary-btn--disabled:active { transform: none; box-shadow: none; background: var(--line); }
+.primary-btn__spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,123 @@
+.box-card {
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--dur-micro) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+.box-card:active { transform: scale(0.985); }
+
+/* One-time staggered entrance (first load only; delay set inline). */
+.box-card--enter { animation: fade-rise var(--dur-medium) var(--ease-out) both; }
+
+.box-card__hero {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+.box-card__photo { width: 100%; height: 100%; object-fit: cover; }
+
+/* Emoji placeholder — colored tint per category */
+.box-card__placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2);
+}
+.box-card__placeholder--bakery   { background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); }
+.box-card__placeholder--cafe     { background: color-mix(in srgb, var(--ink) 7%, var(--surface-2)); }
+.box-card__placeholder--prepared { background: color-mix(in srgb, var(--green) 12%, var(--surface-2)); }
+.box-card__placeholder--supermarket { background: color-mix(in srgb, var(--green) 6%, var(--surface-2)); }
+.box-card__placeholder--dessert  { background: color-mix(in srgb, var(--primary) 14%, var(--surface-2)); }
+.box-card__placeholder--other    { background: var(--surface-2); }
+
+.box-card__ph-emoji {
+  font-size: 44px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(28, 27, 26, 0.12));
+}
+
+/* Quantity badge — top left over the photo */
+.box-card__hero .qty-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(28, 27, 26, 0.12);
+}
+
+/* Discount badge — green like the reference app */
+.box-card__discount {
+  position: absolute; top: 10px; left: auto; right: 10px;
+  background: var(--green);
+  color: var(--on-primary);
+  font-family: var(--font-ui);
+  font-size: 12px; font-weight: 800;
+  padding: 4px 9px; border-radius: var(--radius-pill);
+}
+.box-card__discount--pop { animation: badge-pop var(--dur-medium) var(--ease-spring) both; }
+
+/* ─── Favorite heart ─── */
+.box-card__fav {
+  position: absolute; bottom: 10px; right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none; border-radius: 50%;
+  width: 34px; height: 34px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  box-shadow: 0 2px 8px rgba(28, 27, 26, 0.14);
+  -webkit-tap-highlight-color: transparent;
+}
+.box-card__fav-icon {
+  width: 18px; height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: fill var(--dur-small) var(--ease-out);
+}
+.box-card__fav--active { color: var(--primary); }
+.box-card__fav--active .box-card__fav-icon {
+  fill: var(--primary);
+  animation: heart-pop var(--dur-medium) var(--ease-spring);
+}
+@keyframes heart-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Particle burst (CSS only, fires once on favorite). */
+.box-card__burst {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.box-card__particle {
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: heart-burst 600ms var(--ease-out) forwards;
+}
+
+/* ─── Body ─── */
+.box-card__body { padding: 10px 4px 6px; }
+.box-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.box-card__meta { font-size: 13px; color: var(--muted); margin: 6px 0 10px; }
+
+/* CTA */
+.box-card__cta {
+  width: 100%;
+  padding: 10px 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+}
+.box-card__cta:active { opacity: 0.85; transform: scale(0.98); }

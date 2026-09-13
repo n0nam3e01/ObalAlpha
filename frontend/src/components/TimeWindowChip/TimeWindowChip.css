@@ -1,0 +1,19 @@
+.time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.time-chip__icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}

@@ -1,0 +1,60 @@
+.ticket { padding: 16px var(--page-px) 24px; display: flex; flex-direction: column; gap: 16px; }
+.ticket__card { position: relative; background: var(--surface); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
+.ticket__card--in { animation: drop-in var(--dur-medium) var(--ease-spring) both; }
+.ticket__card--done { opacity: 0.85; }
+.ticket__top { background: var(--ink); color: var(--bg); padding: 28px 24px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ticket__check { width: 48px; height: 48px; }
+
+/* Self-drawing checkmark */
+.ticket__check-svg { width: 48px; height: 48px; }
+.ticket__check-circle {
+  stroke: var(--green);
+  stroke-width: 2.5;
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  animation: checkmark-draw 400ms var(--ease-out) 120ms forwards;
+}
+.ticket__check-mark {
+  stroke: var(--green);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: checkmark-draw 300ms var(--ease-out) 420ms forwards;
+}
+
+/* Digit-by-digit code reveal */
+.ticket__code-digit { display: inline-block; animation: code-in 200ms var(--ease-out) both; }
+
+/* One-shot confetti */
+.ticket__confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+.ticket__confetti-piece {
+  position: absolute; top: 18px;
+  width: 7px; height: 9px; border-radius: 2px;
+  opacity: 0;
+  animation: confetti-fall 1200ms var(--ease-out) forwards;
+}
+.ticket__title { font-size: 20px; font-weight: 800; }
+.ticket__hint { font-size: 13px; opacity: 0.7; }
+.ticket__perforated { height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0, var(--line) 8px, transparent 8px, transparent 16px); margin: 0; }
+.ticket__code-section { padding: 24px; text-align: center; }
+.ticket__code-label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.ticket__code { font-family: var(--font-mono); font-size: 44px; font-weight: 700; letter-spacing: 8px; color: var(--ink); }
+.ticket__meta { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+.ticket__meta-row { display: flex; justify-content: space-between; gap: 12px; }
+.ticket__meta-label { font-size: 12px; font-weight: 700; color: var(--muted); flex-shrink: 0; }
+.ticket__meta-value { font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; }
+.ticket__meta-value--link { color: var(--primary); cursor: pointer; }
+.ticket__status { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-pill); }
+.ticket__status--reserved { background: var(--green-bg); color: var(--green); }
+.ticket__status--picked_up { background: var(--green-bg); color: var(--green); }
+.ticket__status--cancelled { background: var(--line); color: var(--muted); }
+.ticket__countdown { background: var(--warn-bg); color: var(--warn-text); font-size: 14px; font-weight: 700; padding: 12px 16px; border-radius: 14px; text-align: center; }
+/* Under 30 min: a calm opacity pulse every 2s (not alarming). */
+.ticket__countdown--urgent { animation: gentle-pulse 2s var(--ease-inout) infinite; }
+.ticket__actions { display: flex; flex-direction: column; gap: 10px; }
+.ticket__rating { background: var(--surface); border-radius: var(--radius-card); padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: var(--shadow-card); }
+.ticket__rating-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+.ticket__rating-comment { width: 100%; resize: none; }
+.ticket__rating-submit { background: var(--primary); color: var(--on-primary); border: none; border-radius: var(--radius-btn); font-family: var(--font-ui); font-size: 14px; font-weight: 700; padding: 10px 24px; cursor: pointer; }

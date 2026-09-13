@@ -1,0 +1,21 @@
+.price-block {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.price-block__now {
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.3px;
+}
+.price-block--large .price-block__now { font-size: 24px; }
+.price-block__was {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.price-block--large .price-block__was { font-size: 15px; }

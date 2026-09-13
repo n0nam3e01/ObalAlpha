@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#C96D6A"/>
+  <!-- diaeresis dots -->
+  <circle cx="12.5" cy="9" r="1.7" fill="#FFFFFF"/>
+  <circle cx="19.5" cy="9" r="1.7" fill="#FFFFFF"/>
+  <!-- "o" ring -->
+  <circle cx="16" cy="19" r="6.3" stroke="#FFFFFF" stroke-width="3.4"/>
+</svg>

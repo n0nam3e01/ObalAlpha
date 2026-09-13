@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum VenueCategory {
+  BAKERY
+  PREPARED
+  SUPERMARKET
+  CAFE
+  DESSERT
+  OTHER
+}
+
+enum BoxType {
+  SURPRISE
+  ITEMIZED
+}
+
+enum BoxStatus {
+  ACTIVE
+  SOLD_OUT
+  EXPIRED
+}
+
+enum OrderStatus {
+  RESERVED
+  PAID
+  PICKED_UP
+  CANCELLED
+  NO_SHOW
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  telegram_id   BigInt?  @unique
+  name          String
+  display_name  String?
+  username      String?
+  photo_url     String?
+  avatar_preset String?
+  phone         String?  @unique
+  language      String   @default("ru")
+  notifications Boolean  @default(true)
+  boxes_saved   Int      @default(0)
+  money_saved   Int      @default(0)
+  created_at    DateTime @default(now())
+
+  orders    Order[]
+  favorites Favorite[]
+  ratings   Rating[]
+}
+
+model Venue {
+  id             Int           @id @default(autoincrement())
+  name           String
+  category       VenueCategory
+  description    String        @default("")
+  address        String
+  district       String        @default("")
+  geo_lat        Float
+  geo_lng        Float
+  photo_url      String?
+  contact_phone  String
+  kaspi_info     String        @default("")
+  payout_details String        @default("")
+  venue_token    String        @unique
+  access_code    String?       @unique
+  default_pickup_start String?
+  default_pickup_end   String?
+  commission_pct Int           @default(20)
+  rating_avg     Float         @default(0)
+  rating_count   Int           @default(0)
+  is_active      Boolean       @default(true)
+  created_at     DateTime      @default(now())
+
+  boxes     Box[]
+  favorites Favorite[]
+}
+
+model Box {
+  id             Int       @id @default(autoincrement())
+  venue_id       Int
+  venue          Venue     @relation(fields: [venue_id], references: [id])
+  title          String
+  type           BoxType
+  description    String
+  items          String?
+  original_price Int
+  price          Int
+  qty_total      Int
+  qty_left       Int
+  pickup_start   String
+  pickup_end     String
+  pickup_date    DateTime  @db.Date
+  photo_url      String?
+  status         BoxStatus @default(ACTIVE)
+  created_at     DateTime  @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id             Int         @id @default(autoincrement())
+  user_id        Int?
+  user           User?       @relation(fields: [user_id], references: [id])
+  box_id         Int
+  box            Box         @relation(fields: [box_id], references: [id])
+  qty            Int         @default(1)
+  amount         Int
+  commission     Int
+  status         OrderStatus @default(RESERVED)
+  pickup_code    String
+  reserved_until DateTime
+  customer_name  String?
+  customer_phone String?
+  created_at     DateTime    @default(now())
+
+  rating Rating?
+}
+
+model Favorite {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id])
+  venue_id   Int
+  venue      Venue    @relation(fields: [venue_id], references: [id])
+  created_at DateTime @default(now())
+
+  @@unique([user_id, venue_id])
+}
+
+model Rating {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id])
+  order_id   Int      @unique
+  order      Order    @relation(fields: [order_id], references: [id])
+  venue_id   Int
+  stars      Int
+  comment    String?
+  created_at DateTime @default(now())
+}

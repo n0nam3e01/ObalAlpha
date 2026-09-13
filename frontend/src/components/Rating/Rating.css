@@ -1,0 +1,4 @@
+.rating { display: flex; gap: 4px; }
+.rating__star { font-size: 28px; color: var(--line); cursor: pointer; line-height: 1; transition: color 0.1s; }
+.rating__star--filled { color: #F5A623; }
+.rating--readonly .rating__star { cursor: default; }

@@ -1,0 +1,49 @@
+.vdash { padding: 16px var(--page-px) 24px; }
+.vdash__title { font-size: 26px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; margin-bottom: 12px; }
+.vdash__hint { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.vdash__login-btn { width: 100%; background: var(--primary); color: var(--on-primary); border: none; border-radius: var(--radius-btn); font-family: var(--font-ui); font-size: 15px; font-weight: 700; padding: 14px; cursor: pointer; }
+.vdash__venue-name { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; margin-bottom: 14px; }
+
+/* Stats strip */
+.vdash__stats { display: flex; gap: 10px; margin-bottom: 16px; }
+.vdash__stat { flex: 1; background: var(--surface); border-radius: 16px; padding: 14px 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 4px; }
+.vdash__stat-value { font-size: 19px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+.vdash__stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+
+.vdash__tabs { margin-bottom: 16px; }
+
+.vdash__form { display: flex; flex-direction: column; gap: 10px; }
+.vdash__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vdash__publish-btn { width: 100%; background: var(--primary); color: var(--on-primary); border: none; border-radius: var(--radius-btn); font-family: var(--font-ui); font-size: 15px; font-weight: 700; padding: 14px; cursor: pointer; margin-top: 4px; }
+
+/* Live preview */
+.vdash__preview-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 8px; }
+.vdash__preview { pointer-events: none; }
+
+.vdash__list { display: flex; flex-direction: column; gap: 10px; }
+.vdash__empty { color: var(--muted); font-size: 14px; padding: 28px 0; text-align: center; }
+
+/* Box rows */
+.vdash__box-row { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: var(--shadow-card); }
+.vdash__box-info { min-width: 0; }
+.vdash__box-title { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.vdash__box-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.vdash__box-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.vdash__qty { display: flex; align-items: center; gap: 10px; }
+.vdash__qty button { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); border: 1.5px solid var(--line); font-size: 16px; font-weight: 700; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.vdash__qty button:disabled { opacity: 0.3; }
+.vdash__qty span { font-size: 15px; font-weight: 800; min-width: 18px; text-align: center; }
+.vdash__soldout-btn { background: var(--warn-bg); color: var(--warn-text); border: none; border-radius: 10px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; padding: 7px 12px; cursor: pointer; flex-shrink: 0; }
+.vdash__box-status { font-size: 11px; font-weight: 700; color: var(--muted); }
+
+/* Order rows */
+.vdash__order-row { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: var(--shadow-card); transition: background 0.2s; }
+.vdash__order-row--done { background: var(--green-bg); }
+.vdash__order-info { min-width: 0; }
+.vdash__order-code { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: 4px; }
+.vdash__order-meta { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vdash__issue { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.vdash__issue input { width: 64px; text-align: center; font-family: var(--font-mono); padding: 8px 6px; }
+.vdash__issue-btn { background: var(--primary); color: var(--on-primary); border: none; border-radius: 10px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; padding: 9px 14px; cursor: pointer; flex-shrink: 0; }
+.vdash__order-done { font-size: 12px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+.vdash__order-done--cancelled { color: var(--danger); }

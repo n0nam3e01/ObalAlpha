@@ -1,0 +1,92 @@
+.accordion { width: 100%; }
+
+/* Row wrapper carries the open/close gap; transition gives the spring slide. */
+.accordion__row {
+  transition: margin-top var(--dur-medium) var(--ease-spring);
+}
+
+.accordion__item {
+  overflow: hidden;
+  background: var(--surface);
+  color: var(--ink);
+  transition:
+    border-radius var(--dur-medium) var(--ease-spring),
+    background-color var(--dur-small) var(--ease-out);
+}
+/* Hairline between joined (continuing) rows in a collapsed group. */
+.accordion__item--joined { border-top: 1px solid var(--line); }
+.accordion__item--disabled { opacity: 0.5; }
+
+.accordion__trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 18px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-small) var(--ease-out),
+              transform var(--dur-micro) var(--ease-out);
+}
+.accordion__trigger:focus-visible { background: var(--surface-2); }
+.accordion__trigger:active { transform: scale(0.99); }
+.accordion__trigger:disabled { pointer-events: none; }
+
+.accordion__icon {
+  display: grid;
+  place-items: center;
+  width: 28px; height: 28px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.accordion__icon svg { width: 18px; height: 18px; }
+
+.accordion__title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.accordion__chevron {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 24px;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform var(--dur-medium) var(--ease-spring);
+}
+.accordion__chevron svg { width: 16px; height: 16px; }
+.accordion__item[data-state="open"] .accordion__chevron { transform: rotate(180deg); }
+
+/* Height animation via grid 0fr → 1fr (spring easing gives the bounce). */
+.accordion__content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-medium) var(--ease-spring);
+}
+.accordion__item[data-state="open"] .accordion__content {
+  grid-template-rows: 1fr;
+}
+.accordion__content-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity var(--dur-small) var(--ease-out);
+}
+.accordion__item[data-state="open"] .accordion__content-inner { opacity: 1; }
+
+.accordion__description {
+  padding: 0 18px 18px;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}

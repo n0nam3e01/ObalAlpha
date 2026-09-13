@@ -1,0 +1,93 @@
+/* ─────────────────────────────────────────────────────────────
+   Obal motion system
+   GPU-friendly: every animation touches transform/opacity only.
+   Nothing slower than 350ms. Decorative motion is disabled under
+   prefers-reduced-motion.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Durations */
+  --dur-micro: 120ms;  /* taps */
+  --dur-small: 180ms;  /* chips, toggles */
+  --dur-medium: 240ms; /* cards, sheets */
+  --dur-large: 320ms;  /* page transitions */
+}
+
+/* ─── Reusable keyframes ─── */
+@keyframes fade-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes badge-pop {
+  0%   { transform: scale(0.8); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes nav-bounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+@keyframes label-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes drop-in {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes soft-float {
+  0%, 100% { transform: translateY(-4px); }
+  50%      { transform: translateY(4px); }
+}
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+@keyframes checkmark-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes code-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes confetti-fall {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--cx, 0), var(--cy, 80px)) rotate(var(--cr, 180deg)); }
+}
+@keyframes heart-burst {
+  0%   { transform: scale(0); opacity: 1; }
+  100% { transform: scale(1) translate(var(--hx, 0), var(--hy, 0)); opacity: 0; }
+}
+@keyframes page-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-slide-back {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Page transitions (direction-aware, set by App.jsx) ─── */
+.page-transition { animation: page-slide-in var(--dur-large) var(--ease-out); }
+.page-transition--back { animation: page-slide-back var(--dur-large) var(--ease-out); }
+
+/* ─── Pressable: instant tactile feedback on any tappable element ─── */
+.pressable { transition: transform var(--dur-micro) var(--ease-out); }
+.pressable:active { transform: scale(0.97); }
+
+/* ─── Reduced motion: keep essential opacity fades, drop movement ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,6 @@
+.venue-detail { padding: 20px var(--page-px) 24px; }
+.venue-detail__header { margin-bottom: 20px; }
+.venue-detail__name { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.4px; }
+.venue-detail__address { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.venue-detail__rating { font-size: 14px; font-weight: 600; color: var(--green); margin-top: 6px; }
+.venue-detail__boxes { display: flex; flex-direction: column; gap: 14px; }

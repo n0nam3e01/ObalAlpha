@@ -1,0 +1,54 @@
+.home__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--page-px) 10px;
+}
+.home__wordmark {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--primary);
+}
+.home__city {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  background: var(--surface-2);
+  padding: 7px 14px 7px 10px; border-radius: var(--radius-pill);
+}
+.home__pin { width: 15px; height: 15px; color: var(--primary); }
+
+/* ─── Search (Yandex-style grey pill) ─── */
+.home__search-row { padding: 4px var(--page-px) 10px; }
+.home__search-wrap { position: relative; }
+.home__search-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  width: 19px; height: 19px; color: var(--muted); pointer-events: none;
+}
+.home__search {
+  border: none !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 14px 16px 14px 46px !important;
+  background: var(--surface-2) !important;
+  font-size: 15px !important;
+  font-weight: 500;
+}
+.home__search::placeholder { color: var(--muted); }
+
+/* ─── Controls / list ─── */
+.home__controls { padding: 10px var(--page-px); display: flex; flex-direction: column; gap: 8px; }
+.home__view { max-width: 200px; }
+.home__section-label { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; padding: 4px 0 10px; }
+.home__list { padding: 4px var(--page-px); display: flex; flex-direction: column; gap: 16px; }
+
+/* ─── Map placeholder ─── */
+.map-placeholder { padding: var(--page-px); }
+.map-placeholder__bg {
+  background: var(--surface-2);
+  border-radius: var(--radius-card); min-height: 280px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px;
+}
+.map-placeholder__title { font-size: 18px; font-weight: 800; color: var(--ink); }
+.map-placeholder__desc { font-size: 14px; color: var(--muted); }
+.map-placeholder__pins { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: center; }
+.map-pin { background: var(--primary); color: var(--on-primary); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-pill); }

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+.vite/
+
+# Env — never commit real secrets (templates stay tracked)
+.env
+.env.*
+!.env.example
+
+# Deploy
+.vercel/
+
+# Local DB
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/

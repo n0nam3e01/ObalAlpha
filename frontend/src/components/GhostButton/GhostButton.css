@@ -1,0 +1,22 @@
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-btn);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 13px 24px;
+  cursor: pointer;
+  transition: border-color var(--dur-small) var(--ease-out),
+              transform var(--dur-micro) var(--ease-out);
+  min-height: 52px;
+}
+.ghost-btn:active { transform: scale(0.97); }
+.ghost-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ghost-btn:disabled:active { transform: none; }
+.ghost-btn--danger { color: var(--danger); border-color: var(--danger); }
+.ghost-btn--full { width: 100%; }

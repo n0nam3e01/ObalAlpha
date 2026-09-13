@@ -1,0 +1,47 @@
+.category-chips {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 var(--page-px) 4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.category-chips::-webkit-scrollbar { display: none; }
+
+/* Sliding active indicator (positioned in JS to match the active chip). */
+.category-chips__indicator {
+  position: absolute;
+  left: 0;
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+  z-index: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dur-medium) var(--ease-spring),
+    width var(--dur-medium) var(--ease-spring),
+    opacity var(--dur-small) var(--ease-out);
+}
+
+.category-chip {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--dur-small) var(--ease-out),
+    border-color var(--dur-small) var(--ease-out);
+}
+.category-chip--active {
+  color: var(--bg);
+  border-color: transparent;
+}

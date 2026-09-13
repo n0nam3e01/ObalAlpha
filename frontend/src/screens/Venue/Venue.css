@@ -1,0 +1,302 @@
+/* ═══════════════════════════════════════════════════════════
+   Obal для бизнеса — B2B panel skin.
+   Same tokens as the consumer app, but denser + a deep ink header
+   so it reads as a tool, not the shopper feed.
+   ═══════════════════════════════════════════════════════════ */
+
+.vbiz {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.vbiz--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vbiz-spinner {
+  width: 30px; height: 30px;
+  border: 3px solid var(--line);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: vbiz-spin 0.7s linear infinite;
+}
+@keyframes vbiz-spin { to { transform: rotate(360deg); } }
+
+/* ─── Header (deep ink bar) ─── */
+.vbiz-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top)) var(--page-px) 14px;
+  background: var(--brand);
+  color: var(--on-brand);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vbiz-header__brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.vbiz-header__avatar {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; overflow: hidden;
+}
+.vbiz-header__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.vbiz-header__id { display: flex; flex-direction: column; min-width: 0; }
+.vbiz-header__wm { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; color: color-mix(in srgb, var(--on-brand) 60%, transparent); }
+.vbiz-header__wm em { font-style: normal; color: var(--primary); }
+.vbiz-header__name {
+  font-size: 16px; font-weight: 800; letter-spacing: -0.2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.vbiz-header__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.vbiz-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 700;
+  padding: 7px 12px; border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06); color: color-mix(in srgb, var(--on-brand) 70%, transparent);
+  cursor: pointer; transition: all 180ms ease;
+}
+.vbiz-toggle__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 180ms ease; }
+.vbiz-toggle--on { color: var(--on-brand); border-color: color-mix(in srgb, var(--green) 50%, transparent); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.vbiz-toggle--on .vbiz-toggle__dot { background: var(--green); box-shadow: 0 0 8px color-mix(in srgb, var(--green) 70%, transparent); }
+
+.vbiz-icon-btn {
+  width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06); color: var(--on-brand); cursor: pointer;
+  transition: background 180ms ease;
+}
+.vbiz-icon-btn:active { background: rgba(255, 255, 255, 0.14); }
+
+/* ─── Body ─── */
+.vbiz-body { padding: 16px var(--page-px) 0; max-width: 720px; margin: 0 auto; }
+
+/* ─── Stats strip ─── */
+.vbiz-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (min-width: 560px) { .vbiz-stats { grid-template-columns: repeat(4, 1fr); } }
+.vbiz-stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+  animation: vbiz-rise 320ms var(--ease-out) both;
+}
+.vbiz-stat--hl { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); }
+.vbiz-stat__value { display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vbiz-stat--hl .vbiz-stat__value { color: var(--primary); }
+.vbiz-stat__label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
+@keyframes vbiz-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ─── Tabs ─── */
+.vbiz-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.vbiz-tab {
+  position: relative;
+  flex: 1; padding: 11px 8px; border-radius: 12px;
+  font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  cursor: pointer; transition: all 180ms var(--ease-out);
+}
+.vbiz-tab--on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.vbiz-tab__badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 5px;
+  border-radius: 9px; background: var(--primary); color: var(--on-primary);
+  font-size: 11px; font-weight: 800;
+}
+
+/* ─── Generic form controls ─── */
+.vbiz-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 12px 0 6px; }
+.vbiz-input {
+  width: 100%; box-sizing: border-box;
+  font-family: var(--font-ui); font-size: 15px; color: var(--ink);
+  background: var(--surface); border: 1.5px solid var(--line);
+  border-radius: var(--radius-input); padding: 12px 14px;
+  transition: border-color 160ms ease;
+  -webkit-appearance: none; appearance: none;
+}
+.vbiz-input:focus { outline: none; border-color: var(--primary); }
+.vbiz-input::placeholder { color: var(--muted); }
+.vbiz-input--error { border-color: var(--danger); }
+.vbiz-textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+.vbiz-time { font-variant-numeric: tabular-nums; }
+
+.vbiz-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.vbiz-hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+.vbiz-warn { font-size: 12.5px; font-weight: 600; color: var(--danger); margin: 6px 0 0; }
+.vbiz-discount-live { font-size: 14px; font-weight: 800; color: var(--green); margin: 6px 0 0; }
+
+/* ─── Pills (type / category) ─── */
+.vbiz-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.vbiz-pill {
+  font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+  padding: 8px 14px; border-radius: var(--radius-pill);
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--muted);
+  cursor: pointer; transition: all 160ms var(--ease-out);
+}
+.vbiz-pill--on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* ─── Stepper ─── */
+.vbiz-stepper {
+  display: inline-flex; align-items: center; gap: 0;
+  border: 1.5px solid var(--line); border-radius: var(--radius-pill);
+  overflow: hidden; background: var(--surface);
+}
+.vbiz-stepper button {
+  width: 42px; height: 42px; border: none; background: transparent;
+  font-size: 20px; font-weight: 700; color: var(--ink); cursor: pointer;
+  transition: background 140ms ease;
+}
+.vbiz-stepper button:active { background: var(--surface-2); }
+.vbiz-stepper button:disabled { color: var(--muted); opacity: 0.5; cursor: default; }
+.vbiz-stepper span { min-width: 36px; text-align: center; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.vbiz-stepper--sm button { width: 34px; height: 34px; font-size: 17px; }
+.vbiz-stepper--sm span { min-width: 28px; font-size: 14px; }
+
+/* ─── Buttons ─── */
+.vbiz-btn {
+  font-family: var(--font-ui); font-weight: 800; font-size: 15px;
+  border-radius: var(--radius-btn); padding: 13px 18px; cursor: pointer;
+  border: 1.5px solid transparent; transition: transform 120ms var(--ease-out), background 160ms ease;
+}
+.vbiz-btn:active { transform: scale(0.97); }
+.vbiz-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+.vbiz-btn--primary { background: var(--primary); color: var(--on-primary); }
+.vbiz-btn--primary:active:not(:disabled) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 26%, transparent); }
+.vbiz-btn--ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.vbiz-btn--sm { font-size: 13px; padding: 8px 12px; }
+
+/* ─── Add box: form + live preview ─── */
+.vbiz-addbox { display: grid; gap: 18px; }
+@media (min-width: 680px) { .vbiz-addbox { grid-template-columns: 1fr 280px; align-items: start; } }
+.vbiz-addbox__repeat { width: 100%; margin-bottom: 4px; }
+.vbiz-addbox__publish { width: 100%; margin-top: 18px; }
+.vbiz-addbox__preview { position: sticky; top: 88px; }
+.vbiz-preview-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 0 0 10px; }
+.vbiz-preview-card { pointer-events: none; }
+.vbiz-preview-card .box-card { cursor: default; }
+
+/* ─── Box management list ─── */
+.vbiz-boxlist { display: flex; flex-direction: column; gap: 10px; }
+.vbiz-mbox {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 16px; padding: 14px; box-shadow: var(--shadow-card);
+  animation: vbiz-rise 280ms var(--ease-out) both;
+}
+.vbiz-mbox__top { display: flex; align-items: center; gap: 10px; }
+.vbiz-mbox__info { flex: 1; min-width: 0; }
+.vbiz-mbox__title { display: block; font-size: 15px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vbiz-mbox__meta { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.vbiz-mbox__qty { font-size: 14px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vbiz-mbox__actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.vbiz-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.vbiz-dot--active { background: var(--green); box-shadow: 0 0 6px color-mix(in srgb, var(--green) 60%, transparent); }
+.vbiz-dot--sold_out { background: var(--muted); }
+.vbiz-dot--expired { background: var(--line); border: 1px solid var(--muted); }
+
+/* ─── Orders + pickup ─── */
+.vbiz-orders { display: flex; flex-direction: column; gap: 14px; }
+.vbiz-pickup {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; padding: 16px; box-shadow: var(--shadow-card);
+}
+.vbiz-pickup__row { display: flex; gap: 10px; }
+.vbiz-pickup__input {
+  flex: 1; font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+  letter-spacing: 4px; text-align: center;
+}
+.vbiz-pickup__btn { flex-shrink: 0; padding-left: 24px; padding-right: 24px; }
+.vbiz-pickup--shake { animation: vbiz-shake 0.4s var(--ease-inout); }
+@keyframes vbiz-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+.vbiz-orders__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.vbiz-orders__count { font-size: 13px; font-weight: 700; color: var(--muted); }
+.vbiz-orders__search { max-width: 160px; padding: 8px 12px; font-size: 13px; }
+
+.vbiz-orders__list { display: flex; flex-direction: column; gap: 8px; }
+.vbiz-order {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px;
+  transition: background 240ms ease, border-color 240ms ease;
+}
+.vbiz-order--done { background: var(--green-bg); border-color: color-mix(in srgb, var(--green) 35%, var(--line)); }
+.vbiz-order__code { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--ink); letter-spacing: 1px; }
+.vbiz-order__info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vbiz-order__buyer { font-size: 14px; font-weight: 700; color: var(--ink); }
+.vbiz-order__box { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vbiz-order__pill { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-pill); flex-shrink: 0; }
+.vbiz-order__pill--active { background: var(--warn-bg); color: var(--warn-text); }
+.vbiz-order__pill--done { background: var(--green); color: var(--on-primary); }
+.vbiz-order__pill--cancelled { background: var(--surface-2); color: var(--muted); }
+
+/* ─── Settings + payout ─── */
+.vbiz-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; box-shadow: var(--shadow-card); }
+.vbiz-panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.vbiz-panel__title { font-size: 18px; font-weight: 800; margin: 0; }
+.vbiz-link { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+.vbiz-settings__save { width: 100%; margin-top: 18px; }
+.vbiz-logout { width: 100%; margin-top: 12px; color: var(--danger); }
+
+.vbiz-payout { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.vbiz-payout__title { font-size: 13px; font-weight: 800; color: var(--ink); margin: 0 0 10px; }
+.vbiz-payout__row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; color: var(--ink); }
+.vbiz-payout__row--share { font-weight: 800; color: var(--green); }
+.vbiz-payout__row--muted { color: var(--muted); }
+
+/* ─── Empty / error ─── */
+.vbiz-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 16px; }
+.vbiz-error { text-align: center; padding: 48px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.vbiz-error p { color: var(--muted); }
+
+/* ═══ Login screen ═══ */
+.vbiz-login {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; gap: 20px;
+}
+.vbiz-login__card {
+  width: 100%; max-width: 360px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 24px; padding: 32px 24px;
+  box-shadow: var(--shadow-pop);
+}
+.vbiz-login__brand { text-align: center; margin-bottom: 24px; }
+.vbiz-login__o { font-size: 30px; font-weight: 800; color: var(--primary); letter-spacing: -0.8px; }
+.vbiz-login__bal { font-size: 30px; font-weight: 800; color: var(--ink); letter-spacing: -0.8px; }
+.vbiz-login__tag { display: block; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 0.5px; margin-top: 2px; }
+.vbiz-login__form { display: flex; flex-direction: column; gap: 12px; }
+.vbiz-login__input { text-align: center; font-size: 16px; letter-spacing: 1px; }
+.vbiz-login__btn { width: 100%; margin-top: 4px; }
+.vbiz-login__help { text-align: center; font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.vbiz-login__error { font-size: 13px; color: var(--danger); text-align: center; margin: 0; }
+.vbiz-login__back { background: none; border: none; color: var(--muted); font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vbiz-stat, .vbiz-mbox { animation: none; }
+  .vbiz-pickup--shake { animation: none; }
+  .vbiz-spinner { animation-duration: 1.4s; }
+}

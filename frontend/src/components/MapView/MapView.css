@@ -1,0 +1,124 @@
+.map-view {
+  position: relative;
+  /* Explicit height kills the classic Leaflet height:0 bug on list↔map toggle. */
+  height: calc(100dvh - 230px - var(--nav-h));
+  min-height: 340px;
+  margin: 0 calc(-1 * var(--page-px));
+  overflow: hidden;
+}
+
+.map-view--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-view__canvas {
+  width: 100%;
+  height: 100%;
+  background: var(--surface-2);
+}
+
+/* Leaflet draws its own panes; keep our app chrome above the tiles. */
+.leaflet-container {
+  font-family: var(--font-ui);
+}
+
+/* ─── Custom venue marker (divIcon, avoids Leaflet's broken default PNG) ─── */
+.map-marker {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 50% 50% 50% 2px;
+  box-shadow: var(--shadow-card);
+  transform: rotate(45deg);
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), border-color 180ms ease;
+}
+.map-marker > span {
+  transform: rotate(-45deg);
+}
+.map-marker--active {
+  border-color: var(--primary);
+  transform: rotate(45deg) scale(1.12);
+}
+.map-marker--dim {
+  opacity: 0.42;
+  transform: rotate(45deg) scale(0.88);
+  box-shadow: none;
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+/* ─── Bottom card for the tapped venue ─── */
+.map-card {
+  position: absolute;
+  left: var(--page-px);
+  right: var(--page-px);
+  bottom: var(--s4);
+  z-index: 1000;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  padding: var(--s4);
+  animation: map-card-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes map-card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.map-card__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.map-card__venue {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 2px;
+}
+.map-card__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 var(--s3);
+}
+.map-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.map-card__btn {
+  border: none;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 18px;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.map-card__btn:active {
+  transform: scale(0.97);
+}

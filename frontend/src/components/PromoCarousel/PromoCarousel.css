@@ -1,0 +1,99 @@
+.promo { margin: 8px 0 4px; }
+
+/* Horizontal scroll-snap track (swipe on touch, native in Telegram). */
+.promo__track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0 var(--page-px);
+}
+.promo__track::-webkit-scrollbar { display: none; }
+
+/* ─── Slide = one big tap target ─── */
+.promo-slide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  display: flex;
+  align-items: center;
+  min-height: 124px;
+  padding: 18px 20px;
+  border: none;
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  font-family: var(--font-ui);
+  color: var(--promo-fg);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+.promo-slide:active { transform: scale(0.985); }
+
+.promo-slide--warm {
+  background: linear-gradient(118deg, var(--promo-bg) 0%, var(--promo-bg-2) 100%);
+}
+.promo-slide--green {
+  background: linear-gradient(118deg,
+    color-mix(in srgb, var(--green) 58%, var(--ink)) 0%,
+    var(--green) 100%);
+}
+
+/* ─── Text ─── */
+.promo-slide__text { position: relative; z-index: 2; max-width: 64%; }
+.promo-slide__title {
+  display: flex; align-items: center; gap: 4px;
+  margin: 0;
+  font-size: 21px; font-weight: 800; line-height: 1.15; letter-spacing: -0.5px;
+}
+.promo-slide__chevron { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.9; }
+.promo-slide__sub {
+  margin: 7px 0 0;
+  font-size: 13px; font-weight: 500; line-height: 1.35;
+  color: var(--promo-muted);
+}
+.promo-slide__cta {
+  display: inline-flex; align-items: center;
+  margin-top: 12px;
+  padding: 7px 16px;
+  background: var(--promo-fg);
+  color: var(--ink);
+  border-radius: var(--radius-pill);
+  font-size: 12.5px; font-weight: 800;
+}
+
+/* ─── Floating food art ─── */
+.promo-slide__art { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.promo-slide__food {
+  position: absolute;
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+  animation: soft-float 3.4s var(--ease-inout) infinite;
+}
+.promo-slide__food--0 { top: 50%; right: 78px; transform: translateY(-50%); }
+.promo-slide__food--1 {
+  top: 22%; right: 16px; font-size: 40px;
+  animation-duration: 4s; animation-delay: 0.5s;
+}
+
+.promo-slide__sparkle {
+  position: absolute;
+  fill: var(--promo-fg);
+  opacity: 0.85;
+  animation: gentle-pulse 2.6s var(--ease-inout) infinite;
+}
+
+/* ─── Dots ─── */
+.promo__dots {
+  display: flex; justify-content: center; gap: 6px;
+  margin-top: 10px;
+}
+.promo__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--line);
+  transition: width var(--dur-small) var(--ease-out), background-color var(--dur-small) var(--ease-out);
+}
+.promo__dot--active { width: 18px; border-radius: var(--radius-pill); background: var(--primary); }

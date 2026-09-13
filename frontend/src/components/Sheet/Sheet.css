@@ -1,0 +1,23 @@
+.sheet-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
+  animation: fade-in var(--dur-medium) var(--ease-out);
+}
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  padding: 12px var(--page-px) calc(32px + env(safe-area-inset-bottom));
+  z-index: 101;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: sheet-up var(--dur-medium) var(--ease-out);
+}
+.sheet__handle {
+  width: 36px; height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.sheet__title { font-size: 18px; font-weight: 800; color: var(--ink); margin: 0 0 16px; }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
