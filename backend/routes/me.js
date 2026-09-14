@@ -13,6 +13,7 @@ function publicUser(user, favoritesCount) {
     photo_url: user.photo_url,
     avatar_preset: user.avatar_preset,
     phone: user.phone,
+    email: user.email,
     language: user.language,
     notifications: user.notifications,
     boxes_saved: user.boxes_saved,

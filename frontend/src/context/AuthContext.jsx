@@ -7,32 +7,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // On boot: if we already have a token, load the profile. Browsing is public,
-  // so we never block the UI — Home renders regardless.
   useEffect(() => {
-    async function boot() {
-      if (!isAuthed()) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const me = await apiFetch('/me');
-        setUser(me);
-      } catch {
-        // token was stale (apiFetch clears it); stay logged out
-      } finally {
-        setLoading(false);
-      }
-    }
-    boot();
+    if (!isAuthed()) return setLoading(false);
+    apiFetch('/me').then(setUser).catch(() => setToken(null)).finally(() => setLoading(false));
   }, []);
 
-  // Phone-based identity. Returns the user on success.
-  async function login(name, phone) {
-    const data = await apiFetch('/auth/phone', {
-      method: 'POST',
-      body: JSON.stringify({ name, phone }),
-      skipAuth: true,
+  async function authenticate(mode, values) {
+    const data = await apiFetch(`/auth/${mode}`, {
+      method: 'POST', body: JSON.stringify(values), skipAuth: true,
     });
     setToken(data.token);
     setUser(data.user);
@@ -44,21 +26,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
-  async function refreshUser() {
-    try {
-      const me = await apiFetch('/me');
-      setUser(me);
-      return me;
-    } catch {
-      return null;
-    }
-  }
-
-  const value = { user, setUser, loading, login, logout, refreshUser, isAuthed: !!user };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{
+      user, loading, isAuthed: !!user, setUser, logout,
+      login: (values) => authenticate('login', values),
+      register: (values) => authenticate('register', values),
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

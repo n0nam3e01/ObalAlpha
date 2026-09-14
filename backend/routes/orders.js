@@ -11,7 +11,7 @@ function generatePickupCode() {
 
 // POST /api/orders — reserve a box (atomic qty decrement).
 router.post('/', jwtMiddleware, async (req, res) => {
-  const { box_id, qty = 1 } = req.body;
+  const { box_id, qty = 1, fulfillment = 'PICKUP', delivery_address } = req.body;
 
   // parseInt('abc') is NaN, and every NaN comparison is false — so a bare
   // range check would let garbage through into the query. Test the number.
@@ -23,6 +23,12 @@ router.post('/', jwtMiddleware, async (req, res) => {
   const parsedQty = parseInt(qty, 10);
   if (!Number.isInteger(parsedQty) || parsedQty < 1 || parsedQty > 3) {
     return res.status(400).json({ error: 'qty_invalid' });
+  }
+  if (!['PICKUP', 'DELIVERY'].includes(fulfillment)) {
+    return res.status(400).json({ error: 'fulfillment_invalid' });
+  }
+  if (fulfillment === 'DELIVERY' && !delivery_address?.trim()) {
+    return res.status(400).json({ error: 'delivery_address_required' });
   }
 
   try {
@@ -47,6 +53,8 @@ router.post('/', jwtMiddleware, async (req, res) => {
 
       const commission = Math.round((box.price * parsedQty * box.venue.commission_pct) / 100);
       const amount = box.price * parsedQty;
+      const serviceFee = Math.max(99, Math.round(amount * 0.07));
+      const deliveryFee = fulfillment === 'DELIVERY' ? Number(process.env.DELIVERY_FEE ?? 790) : 0;
 
       const [endH, endM] = box.pickup_end.split(':').map(Number);
       const reservedUntil = new Date(box.pickup_date);
@@ -59,6 +67,10 @@ router.post('/', jwtMiddleware, async (req, res) => {
           qty: parsedQty,
           amount,
           commission,
+          service_fee: serviceFee,
+          delivery_fee: deliveryFee,
+          fulfillment,
+          delivery_address: fulfillment === 'DELIVERY' ? delivery_address.trim() : null,
           status: 'RESERVED',
           pickup_code: generatePickupCode(),
           reserved_until: reservedUntil,

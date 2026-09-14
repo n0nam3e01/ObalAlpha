@@ -1,6 +1,6 @@
 // Venue panel API + session. The under-the-hood token lives in localStorage so
 // a manager stays logged in and lands straight on the dashboard next time.
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 const VENUE_TOKEN_KEY = 'obal_venue_token';
 
 export function getVenueToken() {

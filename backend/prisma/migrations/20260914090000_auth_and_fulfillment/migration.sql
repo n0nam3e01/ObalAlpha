@@ -1,0 +1,8 @@
+ALTER TABLE "User" ADD COLUMN "email" TEXT;
+ALTER TABLE "User" ADD COLUMN "password_hash" TEXT;
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+ALTER TABLE "Order" ADD COLUMN "service_fee" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Order" ADD COLUMN "delivery_fee" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Order" ADD COLUMN "fulfillment" TEXT NOT NULL DEFAULT 'PICKUP';
+ALTER TABLE "Order" ADD COLUMN "delivery_address" TEXT;

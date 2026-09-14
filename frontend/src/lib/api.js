@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 const TOKEN_KEY = 'obal_token';
 
 let _token = localStorage.getItem(TOKEN_KEY) || null;
