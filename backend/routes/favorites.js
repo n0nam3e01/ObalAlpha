@@ -2,6 +2,7 @@ const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { jwtMiddleware } = require('../lib/auth');
 const { toId } = require('../lib/params');
+const publicVenue = require('../lib/publicVenue');
 
 const router = Router();
 
@@ -10,7 +11,8 @@ router.get('/', jwtMiddleware, async (req, res) => {
     where: { user_id: req.user.userId },
     include: {
       venue: {
-        include: {
+        select: {
+          ...publicVenue,
           _count: { select: { boxes: { where: { status: 'ACTIVE', qty_left: { gt: 0 } } } } },
         },
       },

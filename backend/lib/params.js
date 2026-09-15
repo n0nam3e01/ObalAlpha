@@ -7,14 +7,14 @@
 
 // A positive integer id, or null when the input isn't one.
 function toId(value) {
-  const n = parseInt(value, 10);
-  return Number.isInteger(n) && n > 0 ? n : null;
+  return toInt(value, { min: 1, max: 2147483647 });
 }
 
 // An integer within [min, max], or null. Use for qty, prices, stars.
 function toInt(value, { min = -Infinity, max = Infinity } = {}) {
-  const n = parseInt(value, 10);
-  return Number.isInteger(n) && n >= min && n <= max ? n : null;
+  if (typeof value !== 'number' && (typeof value !== 'string' || !/^-?\d+$/.test(value))) return null;
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n >= min && n <= max ? n : null;
 }
 
 module.exports = { toId, toInt };

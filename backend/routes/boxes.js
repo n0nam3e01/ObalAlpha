@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
-const { startOfToday, endOfToday } = require('../lib/time');
+const { startOfToday, endOfToday, nowHHMM } = require('../lib/time');
+const publicVenue = require('../lib/publicVenue');
 const { toId } = require('../lib/params');
 
 const router = Router();
@@ -26,6 +27,8 @@ function discountPct(original, price) {
 
 router.get('/', async (req, res) => {
   const { category, q, sort, lat, lng } = req.query;
+  if (category && !['ALL', 'BAKERY', 'PREPARED', 'SUPERMARKET', 'CAFE', 'DESSERT', 'OTHER'].includes(category)) return res.status(400).json({ error: 'category_invalid' });
+  if (q !== undefined && (typeof q !== 'string' || q.length > 200)) return res.status(400).json({ error: 'query_invalid' });
 
   const today = startOfToday();
   const tomorrow = endOfToday();
@@ -33,6 +36,7 @@ router.get('/', async (req, res) => {
   const where = {
     status: 'ACTIVE',
     qty_left: { gt: 0 },
+    pickup_end: { gt: nowHHMM() },
     pickup_date: { gte: today, lt: tomorrow },
     venue: { is_active: true },
   };
@@ -91,10 +95,10 @@ router.get('/:id', async (req, res) => {
   const box = await prisma.box.findUnique({
     where: { id },
     include: {
-      venue: true,
+      venue: { select: publicVenue },
     },
   });
-  if (!box) return res.status(404).json({ error: 'box_not_found' });
+  if (!box || !box.venue.is_active) return res.status(404).json({ error: 'box_not_found' });
 
   res.json({ ...box, discount_pct: discountPct(box.original_price, box.price) });
 });

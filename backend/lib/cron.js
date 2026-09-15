@@ -1,71 +1,23 @@
 const cron = require('node-cron');
 const prisma = require('./prisma');
-const { startOfToday, endOfToday, hhmmToMinutes, astanaNowMinutes } = require('./time');
-const { refreshDemoWindows } = require('../prisma/seed');
+const { startOfToday, nowHHMM } = require('./time');
 
 async function expireBoxesAndCancelOrders() {
   const now = new Date();
-  const currentMinutes = astanaNowMinutes();
-  const today = startOfToday();
-  const tomorrow = endOfToday();
-
-  // Expire boxes whose pickup window has passed today.
-  const activeBoxes = await prisma.box.findMany({
-    where: { status: 'ACTIVE', pickup_date: { gte: today, lt: tomorrow } },
-    select: { id: true, pickup_end: true },
-  });
-
-  const expiredIds = activeBoxes
-    .filter((b) => hhmmToMinutes(b.pickup_end) < currentMinutes)
-    .map((b) => b.id);
-
-  if (expiredIds.length > 0) {
-    await prisma.box.updateMany({ where: { id: { in: expiredIds } }, data: { status: 'EXPIRED' } });
-  }
-
-  // Auto-cancel RESERVED orders past their reserved_until, restoring stock.
-  const overdueOrders = await prisma.order.findMany({
-    where: { status: 'RESERVED', reserved_until: { lt: now } },
-    include: { box: { select: { status: true } } },
-  });
-
-  for (const order of overdueOrders) {
-    // Returning the stock without clearing SOLD_OUT would strand the box:
-    // qty_left goes back above zero but the shopper query filters on
-    // status ACTIVE, so it would never be listed again.
-    const boxData = { qty_left: { increment: order.qty } };
-    if (order.box.status === 'SOLD_OUT') boxData.status = 'ACTIVE';
-
-    await prisma.$transaction([
-      prisma.order.update({ where: { id: order.id }, data: { status: 'NO_SHOW' } }),
-      prisma.box.update({ where: { id: order.box_id }, data: boxData }),
-    ], { timeout: 15000 });
-  }
+  await prisma.box.updateMany({ where: {
+    status: { in: ['ACTIVE', 'SOLD_OUT'] },
+    OR: [{ pickup_date: { lt: startOfToday() } },
+      { pickup_date: startOfToday(), pickup_end: { lte: nowHHMM() } }],
+  }, data: { status: 'EXPIRED' } });
+  // Never re-list expired food. Conditional transitions tolerate overlapping sweeps.
+  await prisma.order.updateMany({ where: {
+    status: 'RESERVED', reserved_until: { lte: now },
+  }, data: { status: 'NO_SHOW' } });
 }
 
 function startCron() {
-  cron.schedule('*/5 * * * *', async () => {
-    try {
-      await expireBoxesAndCancelOrders();
-    } catch (err) {
-      console.error('Cron error:', err.message);
-    }
-  });
-  console.log('Cron scheduler started (every 5 min)');
-
-  // In DEMO_MODE: refresh all boxes to today + live pickup windows every night
-  // at Astana midnight (00:00 UTC+5 = 19:00 UTC).
-  if (process.env.DEMO_MODE === 'true') {
-    cron.schedule('0 19 * * *', async () => {
-      try {
-        const n = await refreshDemoWindows();
-        console.log(`DEMO_MODE nightly refresh: updated ${n} boxes to today`);
-      } catch (err) {
-        console.error('DEMO_MODE nightly refresh error:', err.message);
-      }
-    });
-    console.log('DEMO_MODE: nightly box refresh scheduled (Astana midnight = 19:00 UTC)');
-  }
+  const run = () => expireBoxesAndCancelOrders().catch((err) => console.error('Expiry sweep failed:', err.code || err.message));
+  run();
+  return cron.schedule('* * * * *', run);
 }
-
-module.exports = { startCron };
+module.exports = { startCron, expireBoxesAndCancelOrders };

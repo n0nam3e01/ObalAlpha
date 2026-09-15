@@ -80,7 +80,20 @@ function eveningWindow() {
   return { start: minutesToHHMM(startMin), end: minutesToHHMM(endMin) };
 }
 
+function pickupInstant(date, hhmm) {
+  if (typeof hhmm !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)) return null;
+  const day = new Date(date);
+  if (!Number.isFinite(day.getTime())) return null;
+  return new Date(day.toISOString().slice(0, 10) + 'T' + hhmm + ':00+05:00');
+}
+
+function todayInstant() {
+  return pickupInstant(startOfToday(), '00:00');
+}
+
 module.exports = {
+  pickupInstant,
+  todayInstant,
   ASTANA_OFFSET_MIN,
   astanaParts,
   astanaTodayDate,

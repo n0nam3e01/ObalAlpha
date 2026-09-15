@@ -7,7 +7,7 @@ function hashPassword(password) {
 }
 
 function verifyPassword(password, stored) {
-  if (!stored?.includes(':')) return false;
+  if (typeof password !== 'string' || password.length > 128 || typeof stored !== 'string' || !/^[a-f0-9]{32}:[a-f0-9]{128}$/.test(stored)) return false;
   const [salt, hash] = stored.split(':');
   const expected = Buffer.from(hash, 'hex');
   const actual = scryptSync(password, salt, expected.length);

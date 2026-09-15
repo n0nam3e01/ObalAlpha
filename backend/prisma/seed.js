@@ -1,5 +1,6 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
-const { startOfToday, eveningWindow } = require('../lib/time');
+const { startOfToday, eveningWindow, pickupInstant } = require('../lib/time');
 
 const prisma = new PrismaClient();
 
@@ -237,10 +238,7 @@ async function seedDemoOrders(created) {
 
   const today = startOfToday();
   const reservedUntilFor = (box) => {
-    const d = new Date(today);
-    const [eh, em] = box.pickup_end.split(':').map(Number);
-    d.setUTCHours(eh, em, 0, 0);
-    return d;
+    return pickupInstant(today, box.pickup_end);
   };
 
   const impact = new Map(); // userId -> { boxes, money }
@@ -312,6 +310,9 @@ async function refreshDemoWindows() {
 }
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true') {
+    throw new Error('Demo seed deletes orders and boxes. Use only a disposable local database with ALLOW_DEMO_SEED=true.');
+  }
   console.log('Seeding Obal (8 Astana venues)...');
   await clearTransactional();
   const created = await seedVenuesAndBoxes();

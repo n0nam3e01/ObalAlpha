@@ -10,7 +10,8 @@ function jwtMiddleware(req, res, next) {
     return res.status(401).json({ error: 'unauthorized' });
   }
   try {
-    req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+    req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    if (!Number.isSafeInteger(req.user.userId) || req.user.userId < 1) return res.status(401).json({ error: 'token_invalid' });
     next();
   } catch {
     return res.status(401).json({ error: 'token_invalid' });

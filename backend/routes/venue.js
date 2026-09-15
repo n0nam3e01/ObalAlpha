@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
-const { startOfToday, endOfToday } = require('../lib/time');
+const { startOfToday, endOfToday, todayInstant, pickupInstant } = require('../lib/time');
+const { pickupOrder } = require('../lib/orderTransitions');
 const { toId, toInt } = require('../lib/params');
 const { rateLimit } = require('../lib/rateLimit');
 
@@ -40,17 +41,17 @@ async function computeTodayStats(venueId, commissionPct) {
     prisma.order.aggregate({
       where: {
         box: { venue_id: venueId },
-        status: { in: ['RESERVED', 'PAID', 'PICKED_UP'] },
-        created_at: { gte: today, lt: tomorrow },
+        status: 'PICKED_UP',
+        created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
       },
       _count: true,
-      _sum: { amount: true, qty: true },
+      _sum: { amount: true, qty: true, commission: true },
     }),
     prisma.order.aggregate({
       where: {
         box: { venue_id: venueId },
         status: 'PICKED_UP',
-        created_at: { gte: today, lt: tomorrow },
+        created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
       },
       _count: true,
       _sum: { qty: true },
@@ -58,7 +59,7 @@ async function computeTodayStats(venueId, commissionPct) {
   ]);
 
   const grossRevenue = activeOrders._sum.amount ?? 0;
-  const venueShare = Math.round(grossRevenue * (100 - commissionPct) / 100);
+  const venueShare = grossRevenue - (activeOrders._sum.commission ?? 0);
 
   return {
     boxes_posted: boxesPosted,
@@ -106,6 +107,13 @@ router.patch('/me', venueAuth, async (req, res) => {
   const b = req.body ?? {};
   const data = {};
   for (const f of ['name', 'address', 'contact_phone', 'kaspi_info', 'photo_url']) {
+    if (b[f] !== undefined && (typeof b[f] !== 'string' || b[f].length > 2000)) return res.status(400).json({ error: 'field_invalid' });
+  }
+  if (b.is_active !== undefined && typeof b.is_active !== 'boolean') return res.status(400).json({ error: 'field_invalid' });
+  for (const f of ['default_pickup_start', 'default_pickup_end']) {
+    if (b[f] && !pickupInstant(startOfToday(), b[f])) return res.status(400).json({ error: 'pickup_window_invalid' });
+  }
+  for (const f of ['name', 'address', 'contact_phone', 'kaspi_info', 'photo_url']) {
     if (b[f] !== undefined) data[f] = b[f];
   }
   // An unknown string here reaches Prisma as an invalid enum value and
@@ -132,15 +140,15 @@ router.get('/payout', venueAuth, async (req, res) => {
   const agg = await prisma.order.aggregate({
     where: {
       box: { venue_id: req.venue.id },
-      status: { in: ['PAID', 'PICKED_UP'] },
+      status: 'PICKED_UP',
       created_at: { gte: since },
     },
-    _sum: { amount: true },
+    _sum: { amount: true, commission: true },
     _count: true,
   });
 
   const turnover = agg._sum.amount ?? 0;
-  const commission = Math.round(turnover * req.venue.commission_pct / 100);
+  const commission = agg._sum.commission ?? 0;
   res.json({
     turnover,
     venue_share: turnover - commission,
@@ -153,6 +161,16 @@ router.get('/payout', venueAuth, async (req, res) => {
 // ── POST /venue/boxes — create a box ──
 router.post('/boxes', venueAuth, async (req, res) => {
   const { title, type, description, items, price, original_price, qty, pickup_start, pickup_end, photo_url, category } = req.body;
+  if (!req.venue.is_active) return res.status(409).json({ error: 'venue_inactive' });
+  if (typeof title !== 'string' || !title.trim() || title.length > 160 ||
+      (description !== undefined && (typeof description !== 'string' || description.length > 4000)) ||
+      (items != null && (typeof items !== 'string' || items.length > 4000)) ||
+      (photo_url != null && (typeof photo_url !== 'string' || photo_url.length > 2000 || !/^https:\/\//.test(photo_url)))) {
+    return res.status(400).json({ error: 'field_invalid' });
+  }
+  const start = pickupInstant(startOfToday(), pickup_start);
+  const end = pickupInstant(startOfToday(), pickup_end);
+  if (!start || !end || end <= start || end <= new Date()) return res.status(400).json({ error: 'pickup_window_invalid' });
 
   if (!title || !type || !price || !original_price || !qty || !pickup_start || !pickup_end) {
     return res.status(400).json({ error: 'missing_required_fields' });
@@ -163,7 +181,7 @@ router.post('/boxes', venueAuth, async (req, res) => {
 
   // Parse before comparing: NaN fails every comparison, so `NaN >= NaN` is
   // false and unparseable prices would slip through into the row.
-  const parsedPrice = toInt(price, { min: 0, max: 10_000_000 });
+  const parsedPrice = toInt(price, { min: 1, max: 10_000_000 });
   const parsedOriginal = toInt(original_price, { min: 1, max: 10_000_000 });
   const parsedQty = toInt(qty, { min: 1, max: 1000 });
 
@@ -210,26 +228,33 @@ router.post('/boxes', venueAuth, async (req, res) => {
 // ── PATCH /venue/boxes/:id — qty / price / window / status edits ──
 router.patch('/boxes/:id', venueAuth, async (req, res) => {
   const boxId = toId(req.params.id);
-  if (!boxId) return res.status(404).json({ error: 'box_not_found' });
+  if (!boxId) throw Object.assign(new Error('box_not_found'), { status: 404 });
 
-  const box = await prisma.box.findFirst({ where: { id: boxId, venue_id: req.venue.id } });
-  if (!box) return res.status(404).json({ error: 'box_not_found' });
+  const updated = await prisma.$transaction(async (tx) => {
+  await tx.$queryRaw`SELECT id FROM "Box" WHERE id = ${boxId} AND venue_id = ${req.venue.id} FOR UPDATE`;
+  const box = await tx.box.findFirst({ where: { id: boxId, venue_id: req.venue.id } });
+  if (!box) throw Object.assign(new Error('box_not_found'), { status: 404 });
+
+  // Existing reservations retain their agreed price and collection window.
+  const booked = await tx.order.count({ where: { box_id: boxId, status: { in: ['RESERVED', 'PAID', 'PICKED_UP'] } } });
+  if (booked) throw Object.assign(new Error('box_has_orders_create_new'), { status: 409 });
 
   const { qty_left, price, original_price, title, pickup_start, pickup_end, status } = req.body;
   const data = {};
   if (qty_left !== undefined) {
     const n = toInt(qty_left, { min: 0, max: 1000 });
-    if (n === null) return res.status(400).json({ error: 'qty_invalid' });
+    if (n === null) throw Object.assign(new Error('qty_invalid'), { status: 400 });
     data.qty_left = n;
+    data.qty_total = n;
   }
   if (price !== undefined) {
-    const n = toInt(price, { min: 0, max: 10_000_000 });
-    if (n === null) return res.status(400).json({ error: 'price_invalid' });
+    const n = toInt(price, { min: 1, max: 10_000_000 });
+    if (n === null) throw Object.assign(new Error('price_invalid'), { status: 400 });
     data.price = n;
   }
   if (original_price !== undefined) {
     const n = toInt(original_price, { min: 1, max: 10_000_000 });
-    if (n === null) return res.status(400).json({ error: 'price_invalid' });
+    if (n === null) throw Object.assign(new Error('price_invalid'), { status: 400 });
     data.original_price = n;
   }
   // Re-check the pair against whatever isn't being changed, so an edit can't
@@ -237,15 +262,24 @@ router.patch('/boxes/:id', venueAuth, async (req, res) => {
   const nextPrice = data.price ?? box.price;
   const nextOriginal = data.original_price ?? box.original_price;
   if (nextPrice >= nextOriginal) {
-    return res.status(400).json({ error: 'price_must_be_less_than_original' });
+    throw Object.assign(new Error('price_must_be_less_than_original'), { status: 400 });
   }
-  if (title !== undefined) data.title = title;
+  if (title !== undefined) {
+    if (typeof title !== 'string' || !title.trim() || title.length > 160) throw Object.assign(new Error('field_invalid'), { status: 400 });
+    data.title = title.trim();
+  }
+  if (status !== undefined && !['ACTIVE', 'SOLD_OUT', 'EXPIRED'].includes(status)) throw Object.assign(new Error('status_invalid'), { status: 400 });
+  const start = pickupInstant(box.pickup_date, pickup_start ?? box.pickup_start);
+  const end = pickupInstant(box.pickup_date, pickup_end ?? box.pickup_end);
+  if (!start || !end || end <= start || end <= new Date()) throw Object.assign(new Error('pickup_window_invalid'), { status: 400 });
   if (pickup_start) data.pickup_start = pickup_start;
   if (pickup_end) data.pickup_end = pickup_end;
   // SOLD_OUT = sold out; EXPIRED = unpublished (hidden from shoppers); ACTIVE = re-list.
   if (['ACTIVE', 'SOLD_OUT', 'EXPIRED'].includes(status)) data.status = status;
 
-  const updated = await prisma.box.update({ where: { id: box.id }, data });
+  if (data.status !== 'EXPIRED') data.status = (data.qty_left ?? box.qty_left) === 0 ? 'SOLD_OUT' : 'ACTIVE';
+  return tx.box.update({ where: { id: box.id }, data });
+  });
   res.json(updated);
 });
 
@@ -281,7 +315,7 @@ router.get('/orders', venueAuth, async (req, res) => {
   const orders = await prisma.order.findMany({
     where: {
       box: { venue_id: req.venue.id },
-      created_at: { gte: today, lt: tomorrow },
+      created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
     },
     include: {
       user: { select: { id: true, display_name: true, name: true, phone: true } },
@@ -295,30 +329,26 @@ router.get('/orders', venueAuth, async (req, res) => {
 
 // Shared pickup logic: mark an order PICKED_UP + credit the buyer's impact.
 async function doPickup(order) {
-  const savings = order.box.original_price * order.qty - order.amount;
-  const ops = [prisma.order.update({ where: { id: order.id }, data: { status: 'PICKED_UP' } })];
-  if (order.user_id) {
-    ops.push(prisma.user.update({
-      where: { id: order.user_id },
-      data: { boxes_saved: { increment: order.qty }, money_saved: { increment: savings } },
-    }));
-  }
-  await prisma.$transaction(ops, { timeout: 15000 });
+  await pickupOrder(order);
 }
 
 // ── POST /venue/pickup { code } — counter flow: match code, no order id needed ──
-router.post('/pickup', venueAuth, async (req, res) => {
-  const code = (req.body?.code ?? '').toString().trim();
+router.post('/pickup', venueAuth, rateLimit({ max: 20 }), async (req, res) => {
+  const code = typeof req.body?.code === 'string' ? req.body.code.trim().toUpperCase() : '';
   if (!code) return res.status(400).json({ error: 'code_required' });
 
-  const order = await prisma.order.findFirst({
+  const matches = await prisma.order.findMany({
     where: {
       box: { venue_id: req.venue.id },
       pickup_code: code,
       status: { in: ['RESERVED', 'PAID'] },
+      reserved_until: { gt: new Date() },
     },
+    take: 2,
     include: { box: true, user: true },
   });
+  if (matches.length > 1) return res.status(409).json({ error: 'code_ambiguous_use_order_id' });
+  const order = matches[0];
   if (!order) return res.status(404).json({ error: 'code_not_found' });
 
   await doPickup(order);

@@ -35,10 +35,11 @@ router.get('/', jwtMiddleware, async (req, res) => {
 router.patch('/', jwtMiddleware, async (req, res) => {
   const { display_name, avatar_preset, language, phone, notifications } = req.body;
   const data = {};
+  // Login identifiers need a separate verified-change flow, not profile PATCH.
+  if (phone !== undefined || req.body.email !== undefined) return res.status(400).json({ error: 'contact_change_unavailable' });
   if (typeof display_name === 'string' && display_name.trim()) data.display_name = display_name.trim();
   if (typeof avatar_preset === 'string') data.avatar_preset = avatar_preset;
   if (language && ['ru', 'kk'].includes(language)) data.language = language;
-  if (typeof phone === 'string') data.phone = phone.trim();
   if (typeof notifications === 'boolean') data.notifications = notifications;
 
   const user = await prisma.user.update({
