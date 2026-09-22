@@ -1,13 +1,17 @@
 :root {
   color-scheme: light;
-  --canvas: #f6f1e8;
-  --paper: #fffdf8;
+  --canvas: #fbf5f3;
+  --paper: #fffcfb;
   --paper-strong: #ffffff;
-  --ink: #22211e;
-  --muted: #706d66;
-  --line: rgba(48, 43, 35, .13);
-  --accent: #ee5d34;
-  --accent-dark: #c84221;
+  --ink: #302629;
+  --muted: #75615f;
+  --line: rgba(72, 42, 44, .14);
+  --brand: #ca6666;
+  --accent: #b25252;
+  --accent-soft: #f5e1df;
+  --paper-rgb: 255, 252, 251;
+  --surface-muted: #eee0dd;
+  --accent-dark: #964040;
   --green: #246b48;
   --green-soft: #dcebdd;
   --danger: #a53224;
@@ -15,5 +19,5 @@
   --radius-md: 18px;
   --radius-lg: 28px;
   --ease-out: cubic-bezier(.23, 1, .32, 1);
-  --shadow: 0 18px 50px rgba(70, 54, 35, .1);
+  --shadow: 0 18px 50px rgba(90, 46, 50, .1);
 }
