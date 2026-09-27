@@ -130,6 +130,7 @@ model Order {
   delivery_address String?
   status         OrderStatus @default(RESERVED)
   pickup_code    String
+  idempotency_key String?     @db.VarChar(64)
   reserved_until DateTime
   customer_name  String?
   customer_phone String?
@@ -145,6 +146,7 @@ model Order {
   @@index([pickup_code])
   // FK — needed for the venue-scoped order queries and joins.
   @@index([box_id])
+  @@unique([user_id, idempotency_key])
 }
 
 model Favorite {

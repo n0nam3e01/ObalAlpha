@@ -235,6 +235,12 @@ router.patch('/boxes/:id', venueAuth, async (req, res) => {
   const box = await tx.box.findFirst({ where: { id: boxId, venue_id: req.venue.id } });
   if (!box) throw Object.assign(new Error('box_not_found'), { status: 404 });
 
+  // Unpublishing an offer must remain possible after reservations. Existing
+  // orders retain their agreed pickup window; only unsold stock is hidden.
+  if (req.body.status === 'EXPIRED' && Object.keys(req.body).length === 1) {
+    return tx.box.update({ where: { id: box.id }, data: { status: 'EXPIRED' } });
+  }
+
   // Existing reservations retain their agreed price and collection window.
   const booked = await tx.order.count({ where: { box_id: boxId, status: { in: ['RESERVED', 'PAID', 'PICKED_UP'] } } });
   if (booked) throw Object.assign(new Error('box_has_orders_create_new'), { status: 409 });

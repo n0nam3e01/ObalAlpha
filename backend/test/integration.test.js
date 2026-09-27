@@ -92,6 +92,16 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal(me.boxes_saved, 1); assert.equal(me.money_saved, 1000);
     const stats = (await api('/venue/me', { venueToken: shop.venue_token })).data.today_stats;
     assert.equal(stats.revenue, 900);
+    const repeatable = (await api('/venue/boxes', { method: 'POST', venueToken: shop.venue_token, body: { ...offer, qty: 2 } })).data;
+    const idempotencyKey = randomUUID();
+    const retry = () => api('/orders', { method: 'POST', token: buyer.token, body: { box_id: repeatable.id, idempotency_key: idempotencyKey } });
+    const repeated = await Promise.all([retry(), retry()]);
+    assert.deepEqual(repeated.map((r) => r.status).sort(), [200, 201]);
+    assert.equal(repeated[0].data.id, repeated[1].data.id);
+    assert.equal((await prisma.box.findUnique({ where: { id: repeatable.id } })).qty_left, 1);
+    assert.equal((await api('/orders', { method: 'POST', token: buyer.token, body: { box_id: box.id, idempotency_key: idempotencyKey } })).status, 409);
+    assert.equal((await api('/venue/boxes/' + repeatable.id, { method: 'PATCH', venueToken: shop.venue_token, body: { status: 'EXPIRED' } })).status, 200);
+    assert.equal((await prisma.order.findUnique({ where: { id: repeated[0].data.id } })).status, 'RESERVED');
     const closed = await prisma.box.create({ data: { ...offer, qty: undefined, venue_id: shop.id, qty_total: 1, qty_left: 1, pickup_date: new Date(startOfToday().getTime() - 86400000) } });
     assert.equal((await api('/orders', { method: 'POST', token: buyer.token, body: { box_id: closed.id } })).status, 409);
     await expireBoxesAndCancelOrders();
