@@ -32,3 +32,27 @@
 .admin-login { display: grid; grid-template-rows: auto 1fr auto; padding: 32px; }.admin-login form { align-self: center; justify-self: center; width: min(100%, 430px); padding: 32px; display: grid; gap: 16px; border: 1px solid #eaded5; border-radius: 18px; background: #fffaf5; }.admin-login h1 { margin: 0; font-size: 34px; letter-spacing: -.05em; }.admin-login p:not(.admin-kicker):not(.admin-error) { margin: 0; color: #817670; line-height: 1.6; }.admin-login .admin-kicker { margin: 0; }.admin-login > a:last-child { color: #817670; }
 @media (max-width: 850px) { .admin-body { grid-template-columns: 1fr; }.admin-sidebar { padding: 12px 20px; border-right: 0; border-bottom: 1px solid #eaded5; }.admin-sidebar .admin-kicker, .admin-sidebar-note { display: none; }.admin-sidebar nav { display: flex; gap: 5px; overflow-x: auto; }.admin-sidebar nav button { flex: 0 0 auto; }.admin-stats { grid-template-columns: 1fr 1fr; }.admin-user { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .admin-header > div span { display: none; }.admin-section-head { align-items: start; flex-direction: column; }.admin-form { grid-template-columns: 1fr; }.admin-stats { gap: 8px; }.admin-stats > div { min-height: 105px; padding: 16px; }.admin-stats strong { font-size: 29px; }.admin-queue { grid-template-columns: 1fr; }.admin-item-main { flex-direction: column; }.admin-user { grid-template-columns: 1fr; }.admin-code { flex-direction: column; } }
+
+.admin-content, .admin-item-main > div:first-child, .admin-user > * { min-width: 0; }
+.admin-item strong, .admin-item span, .admin-item p, .admin-user code, .admin-code code { overflow-wrap: anywhere; }
+.admin-sidebar nav button { white-space: nowrap; }
+.admin-form .admin-field { min-width: 0; }
+.admin-field input, .admin-field select { width: 100%; }
+.admin-primary, .admin-secondary, .admin-item-actions button { transition: transform 140ms cubic-bezier(.23,1,.32,1), background-color 160ms ease, border-color 160ms ease; }
+.admin-primary:active, .admin-secondary:active, .admin-item-actions button:active { transform: scale(.97); }
+@media (max-width: 560px) {
+  .admin-header { padding-inline: 18px; }
+  .admin-content { padding: 26px 18px 40px; }
+  .admin-title { align-items: flex-start; }
+  .admin-title h1 { font-size: 34px; }
+  .admin-section-head .admin-primary { width: 100%; }
+  .admin-list { gap: 8px; }
+  .admin-item { padding: 17px; }
+  .admin-form { padding: 18px; }
+  .admin-login { padding-inline: 18px; }
+  .admin-login form { padding: 24px 20px; }
+  .admin-login h1 { font-size: clamp(27px, 8vw, 34px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-primary, .admin-secondary, .admin-item-actions button { transition: none; }
+}

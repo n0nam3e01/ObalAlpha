@@ -72,7 +72,7 @@ function BottomNav() {
 function DealCard({ box, index }) {
   return <Link className="deal-card" to={`/box/${box.id}`} style={{ '--delay': `${index * 45}ms` }}>
     <div className="deal-card__media">
-      <img src={box.photo_url || images[index % images.length]} alt={`${box.title}, ${box.venue.name}`} />
+      <img src={box.photo_url || images[index % images.length]} alt={`${box.title}, ${box.venue.name}`} width="640" height="480" loading="lazy" />
       <span className="deal-card__discount">−{box.discount_pct}%</span>
       <span className="deal-card__left">Осталось {box.qty_left}</span>
     </div>
@@ -172,7 +172,7 @@ function Detail() {
   const total = box.price * qty;
   const available = box.status === 'ACTIVE' && box.qty_left >= qty && new Date(box.pickup_date.slice(0, 10) + 'T' + box.pickup_end + ':00+05:00') > new Date();
   return <Shell nav={false}><main className="detail" id="main-content">
-    <div className="detail-media"><img src={box.photo_url || images[0]} alt={box.title}/><Link className="round-action back" to="/" aria-label="Назад"><Icon name="back"/></Link></div>
+    <div className="detail-media"><img src={box.photo_url || images[0]} alt={box.title} width="1200" height="900" fetchPriority="high"/><Link className="round-action back" to="/" aria-label="Назад"><Icon name="back"/></Link></div>
     <article className="detail-body"><p className="eyebrow">{box.venue.name}{box.venue.rating_count > 0 ? ' · ' + box.venue.rating_avg : ''}</p><h1>{box.title}</h1>
       <div className="detail-price"><strong>{money(box.price)}</strong><s>{money(box.original_price)}</s><span>Экономия {box.discount_pct}%</span></div>
       <p className="detail-description">{box.description}</p>{box.items && <p>{box.items}</p>}
