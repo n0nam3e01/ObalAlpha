@@ -78,7 +78,7 @@ npm run venue:add -- --name "Пекарня" --category BAKERY --address "Адр
 - API: https://obal-api.onrender.com/api/health — Render Blueprint `obal-alpha`, web service `obal-api` на бесплатном плане.
 - `VITE_API_URL=https://obal-api.onrender.com` задана для Production в Vercel. API подключён к Supabase PostgreSQL; четыре миграции применены.
 - Каталог пока пустой: реальные заведения и наборы не создавались. Добавляйте их через `npm run venue:add` и кабинет `/partner`.
-- Пароль базы был передан в чате при настройке. До публичного запуска смените его в Supabase и обновите оба адреса подключения в Render и локальном `backend/.env`.
+- До публичного запуска смените пароль базы в Supabase и обновите оба адреса подключения в Render и локальном `backend/.env`.
 
 ## До публичного пилота
 
