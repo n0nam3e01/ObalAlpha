@@ -72,9 +72,13 @@ npm run venue:add -- --name "Пекарня" --category BAKERY --address "Адр
 
 Источники: [Vite/Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Express/Render](https://render.com/docs/deploy-node-express-app), [Supabase/Prisma](https://supabase.com/docs/guides/database/prisma), [бесплатный Render](https://render.com/docs/free).
 
-## Диагностика Vercel, 27.09.2026
+## Текущий деплой, 28.09.2026
 
-`https://obal-alpha.vercel.app/` возвращает 503 `DEPLOYMENT_PAUSED`. Пока проект приостановлен в Vercel, новый push не сделает сайт доступным. Нужно возобновить проект в панели Vercel и проверить сборку после этого.
+- Frontend: https://obal-alpha.vercel.app/ — проект Vercel возобновлён, production собирается из `main`.
+- API: https://obal-api.onrender.com/api/health — Render Blueprint `obal-alpha`, web service `obal-api` на бесплатном плане.
+- `VITE_API_URL=https://obal-api.onrender.com` задана для Production в Vercel. API подключён к Supabase PostgreSQL; четыре миграции применены.
+- Каталог пока пустой: реальные заведения и наборы не создавались. Добавляйте их через `npm run venue:add` и кабинет `/partner`.
+- Пароль базы был передан в чате при настройке. До публичного запуска смените его в Supabase и обновите оба адреса подключения в Render и локальном `backend/.env`.
 
 ## До публичного пилота
 
