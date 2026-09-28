@@ -119,7 +119,7 @@ function Home() {
     }
     {loading && <p role="status">Загружаем предложения…</p>}
     {error && <p className="form-error" role="alert">{error}</p>}
-    {!loading && !error && !visible.length && <div className="empty"><Icon name="search" size={30}/><h3>Ничего не нашли</h3><p>Сбросьте фильтр или попробуйте другой запрос.</p><button onClick={() => { setCategory('ALL'); setQuery(''); }}>Показать всё</button></div>}
+    {!loading && !error && !visible.length && <div className="empty"><Icon name="search" size={30}/><h3>{boxes.length ? 'Ничего не нашли' : 'Предложений пока нет'}</h3><p>{boxes.length ? 'Сбросьте фильтр или попробуйте другой запрос.' : 'Скоро здесь появятся наборы от заведений Астаны.'}</p>{boxes.length > 0 && <button onClick={() => { setCategory('ALL'); setQuery(''); }}>Показать всё</button>}</div>}
     <section className="impact-strip"><Icon name="leaf" size={30}/><div><strong>Каждый заказ помогает</strong><p>Вы экономите, а хорошая еда не отправляется в мусор.</p></div></section>
   </main></Shell>;
 }
