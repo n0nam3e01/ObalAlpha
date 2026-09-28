@@ -127,6 +127,7 @@ router.patch('/me', venueAuth, async (req, res) => {
   if (b.is_active !== undefined) data.is_active = !!b.is_active;
   if (b.default_pickup_start !== undefined) data.default_pickup_start = b.default_pickup_start || null;
   if (b.default_pickup_end !== undefined) data.default_pickup_end = b.default_pickup_end || null;
+  if (['name', 'address', 'contact_phone', 'photo_url', 'category'].some((key) => data[key] !== undefined)) data.is_approved = false;
 
   const venue = await prisma.venue.update({ where: { id: req.venue.id }, data });
   res.json({ venue });
@@ -161,7 +162,7 @@ router.get('/payout', venueAuth, async (req, res) => {
 // ── POST /venue/boxes — create a box ──
 router.post('/boxes', venueAuth, async (req, res) => {
   const { title, type, description, items, price, original_price, qty, pickup_start, pickup_end, photo_url, category } = req.body;
-  if (!req.venue.is_active) return res.status(409).json({ error: 'venue_inactive' });
+  if (!req.venue.is_active || !req.venue.is_approved) return res.status(409).json({ error: 'venue_inactive' });
   if (typeof title !== 'string' || !title.trim() || title.length > 160 ||
       (description !== undefined && (typeof description !== 'string' || description.length > 4000)) ||
       (items != null && (typeof items !== 'string' || items.length > 4000)) ||
@@ -214,6 +215,7 @@ router.post('/boxes', venueAuth, async (req, res) => {
       pickup_date: startOfToday(),
       photo_url: photo_url ?? null,
       status: 'ACTIVE',
+      is_approved: false,
     },
   });
 
@@ -284,6 +286,7 @@ router.patch('/boxes/:id', venueAuth, async (req, res) => {
   if (['ACTIVE', 'SOLD_OUT', 'EXPIRED'].includes(status)) data.status = status;
 
   if (data.status !== 'EXPIRED') data.status = (data.qty_left ?? box.qty_left) === 0 ? 'SOLD_OUT' : 'ACTIVE';
+  if (Object.keys(data).some((key) => ['title', 'price', 'original_price', 'pickup_start', 'pickup_end'].includes(key))) data.is_approved = false;
   return tx.box.update({ where: { id: box.id }, data });
   });
   res.json(updated);

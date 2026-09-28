@@ -38,6 +38,7 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal(registration.status, 201);
     const buyer = registration.data;
     userIds.push(buyer.user.id);
+    assert.match(buyer.user.public_id, /^OB-[A-F0-9]{12}$/);
     noSecrets(buyer);
     assert.equal((await api('/auth/register', { method: 'POST', body: credentials })).status, 409);
     assert.equal((await api('/auth/login', { method: 'POST', body: { identifier: credentials.email, password: credentials.password } })).status, 200);
@@ -46,6 +47,34 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     const other = await prisma.user.create({ data: { name: 'Other ' + key } });
     userIds.push(other.id);
     const otherToken = require('../lib/auth').signJwt({ userId: other.id });
+    const { hashPassword } = require('../lib/password');
+    const admin = await prisma.user.create({ data: { name: 'Test Admin', username: 'test_' + key.replaceAll('-', '').slice(0, 20), role: 'ADMIN', password_hash: hashPassword('admin-test-password-123') } });
+    userIds.push(admin.id);
+    const adminLogin = await api('/admin/login', { method: 'POST', body: { username: admin.username, password: 'admin-test-password-123' } });
+    assert.equal(adminLogin.status, 200);
+    const adminToken = adminLogin.data.token;
+    assert.equal((await api('/admin/overview', { token: buyer.token })).status, 403);
+    assert.equal((await api('/admin/overview', { token: adminToken })).status, 200);
+    assert.equal((await api('/orders', { token: adminToken })).status, 403);
+    const users = await api('/admin/users', { token: adminToken });
+    assert.equal(users.status, 200);
+    assert.ok(users.data.items.some((u) => u.public_id === buyer.user.public_id));
+    noSecrets(users.data);
+    const adminVenue = await api('/admin/venues', { method: 'POST', token: adminToken, body: { name: 'Test Admin Venue', category: 'BAKERY', address: 'Астана, тест 1', contact_phone: '+77000000000', geo_lat: 51.16, geo_lng: 71.43 } });
+    assert.equal(adminVenue.status, 201, JSON.stringify(adminVenue));
+    venueIds.push(adminVenue.data.venue.id);
+    assert.equal(adminVenue.data.venue.is_approved, false);
+    assert.equal((await api('/admin/venues', { token: adminToken })).status, 200);
+    noSecrets((await api('/admin/venues', { token: adminToken })).data);
+    const initialCode = adminVenue.data.access_code;
+    assert.equal((await api('/venue/auth', { method: 'POST', body: { code: initialCode } })).status, 200);
+    const rotated = await api('/admin/venues/' + adminVenue.data.venue.id + '/code', { method: 'POST', token: adminToken, body: {} });
+    assert.equal(rotated.status, 200);
+    assert.notEqual(rotated.data.access_code, initialCode);
+    assert.equal((await api('/venue/auth', { method: 'POST', body: { code: initialCode } })).status, 401);
+    assert.equal((await api('/venue/auth', { method: 'POST', body: { code: rotated.data.access_code } })).status, 200);
+    assert.equal((await api('/admin/venues/' + adminVenue.data.venue.id, { method: 'PATCH', token: adminToken, body: { is_approved: true, is_active: true } })).status, 200);
+    assert.equal((await api('/admin/venues', { method: 'POST', token: adminToken, body: { name: 'Wrong city', category: 'BAKERY', address: 'Алматы', contact_phone: '+77000000000', geo_lat: 43.2, geo_lng: 76.9 } })).status, 400);
     async function venue(suffix) {
       const row = await prisma.venue.create({ data: {
         name: 'Test ' + suffix, category: 'BAKERY', address: 'Test address', geo_lat: 51.1, geo_lng: 71.4,
@@ -57,9 +86,17 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     const shop = await venue('A');
     const otherShop = await venue('B');
     const offer = { title: 'Тестовый набор', description: 'Только для теста', type: 'SURPRISE', price: 1000, original_price: 2000, qty: 1, pickup_start: '00:00', pickup_end: '23:59' };
+    const adminBox = await api('/admin/boxes', { method: 'POST', token: adminToken, body: { ...offer, venue_id: adminVenue.data.venue.id } });
+    assert.equal(adminBox.status, 201, JSON.stringify(adminBox));
+    assert.equal(adminBox.data.is_approved, true);
+    assert.equal((await api('/boxes/' + adminBox.data.id)).status, 200);
     const created = await api('/venue/boxes', { method: 'POST', venueToken: shop.venue_token, body: offer });
     assert.equal(created.status, 201, JSON.stringify(created));
     const box = created.data;
+    assert.equal(box.is_approved, false);
+    assert.equal((await api('/boxes/' + box.id)).status, 404);
+    assert.equal((await api('/orders', { method: 'POST', token: buyer.token, body: { box_id: box.id } })).status, 409);
+    assert.equal((await api('/admin/boxes/' + box.id, { method: 'PATCH', token: adminToken, body: { is_approved: true } })).status, 200);
     assert.equal((await api('/venue/boxes', { method: 'POST', venueToken: shop.venue_token, body: { ...offer, pickup_end: '99:00' } })).status, 400);
     noSecrets((await api('/boxes/' + box.id)).data);
     noSecrets((await api('/boxes')).data);
@@ -93,6 +130,7 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     const stats = (await api('/venue/me', { venueToken: shop.venue_token })).data.today_stats;
     assert.equal(stats.revenue, 900);
     const repeatable = (await api('/venue/boxes', { method: 'POST', venueToken: shop.venue_token, body: { ...offer, qty: 2 } })).data;
+    assert.equal((await api('/admin/boxes/' + repeatable.id, { method: 'PATCH', token: adminToken, body: { is_approved: true } })).status, 200);
     const idempotencyKey = randomUUID();
     const retry = () => api('/orders', { method: 'POST', token: buyer.token, body: { box_id: repeatable.id, idempotency_key: idempotencyKey } });
     const repeated = await Promise.all([retry(), retry()]);

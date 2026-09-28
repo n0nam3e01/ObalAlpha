@@ -3,6 +3,7 @@ const prisma = require('../lib/prisma');
 const { signJwt } = require('../lib/auth');
 const { hashPassword, verifyPassword } = require('../lib/password');
 const { rateLimit } = require('../lib/rateLimit');
+const { randomBytes } = require('node:crypto');
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 60_000, max: 10 });
@@ -15,6 +16,7 @@ const normalizePhone = (value) => {
 };
 const publicUser = (user) => ({
   id: user.id,
+  public_id: user.public_id,
   name: user.name,
   display_name: user.display_name,
   email: user.email,
@@ -48,7 +50,7 @@ router.post('/register', authLimit, async (req, res) => {
   if (existing) return res.status(409).json({ error: 'account_exists' });
 
   const user = await prisma.user.create({
-    data: { name, display_name: name, email, phone, password_hash: hashPassword(password), language: 'ru' },
+    data: { name, display_name: name, email, phone, public_id: 'OB-' + randomBytes(6).toString('hex').toUpperCase(), password_hash: hashPassword(password), language: 'ru' },
   });
   issueSession(user, res, 201);
 });
@@ -62,7 +64,7 @@ router.post('/login', authLimit, async (req, res) => {
   const phone = email ? null : normalizePhone(identifier);
   if (!email && !phone) return res.status(401).json({ error: 'credentials_invalid' });
   const user = await prisma.user.findFirst({ where: email ? { email } : { phone } });
-  if (!user || !verifyPassword(password, user.password_hash)) {
+  if (!user || user.role !== 'CUSTOMER' || !verifyPassword(password, user.password_hash)) {
     return res.status(401).json({ error: 'credentials_invalid' });
   }
   issueSession(user, res);

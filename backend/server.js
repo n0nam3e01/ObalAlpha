@@ -20,7 +20,7 @@ app.use((req, res, next) => {
   }
   next();
 });
-for (const route of ['auth', 'boxes', 'orders', 'favorites', 'ratings', 'me', 'venue']) {
+for (const route of ['auth', 'boxes', 'orders', 'favorites', 'ratings', 'me', 'venue', 'admin']) {
   app.use(`/api/${route}`, require(`./routes/${route}`));
 }
 app.get('/api/health', async (_req, res) => {

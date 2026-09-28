@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Route, Routes, useNavigate, useParams, useLocation
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiFetch } from './lib/api';
 import { getVenueToken, setVenueToken, venueAuth, venueFetch } from './lib/venueApi';
+import Admin from './screens/Admin/Admin';
 
 const images = [
   'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=85',
@@ -48,7 +49,7 @@ function Shell({ children }) {
 function BottomNav() {
   const { pathname, search } = useLocation();
   const [instant, setInstant] = useState(false);
-  if (pathname.startsWith('/box/') || pathname === '/partner') return null;
+  if (pathname.startsWith('/box/') || pathname === '/partner' || pathname === '/admin') return null;
   const selected = pathname === '/orders' ? 2 : pathname === '/profile' ? 3
     : new URLSearchParams(search).get('focus') === 'search' ? 1 : 0;
   const tabs = [
@@ -106,7 +107,7 @@ function Home() {
   }), [boxes, category, query]);
 
   return <Shell><main className="home" id="main-content">
-    <header className="home-head"><Brand/><button className="location"><Icon name="pin" size={18}/><span>Астана · Есиль</span></button><Link className="avatar" to="/profile" aria-label="Профиль">М</Link></header>
+    <header className="home-head"><Brand/><span className="location"><Icon name="pin" size={18}/><span>Астана</span></span><Link className="avatar" to="/profile" aria-label="Профиль">М</Link></header>
     <section className="intro">
       <div className="search-box"><Icon name="search"/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Что спасём сегодня?" aria-label="Поиск предложений"/></div>
       <div className="hero-copy"><p className="eyebrow">Еда с хорошим продолжением</p><h1>Заберите сегодня дешевле</h1><p>Еда из заведений рядом со скидкой. Заберите сегодня в указанное время.</p></div>
@@ -237,13 +238,13 @@ function Profile() {
     } catch (err) { setError(errorText[err.code] || 'Не получилось войти. Проверьте данные.'); }
     finally { setBusy(false); }
   }
-  if (isAuthed) return <Shell><main className="simple-page profile" id="main-content"><header><Brand/><h1>Профиль</h1></header><section className="profile-card"><div className="profile-avatar">{(user.display_name || user.name || 'М')[0]}</div><div><h2>{user.display_name || user.name}</h2><p>{user.email || user.phone}</p></div></section><section className="impact-card"><div><strong>{user.boxes_saved || 0}</strong><span>порций спасено</span></div><div><strong>{money(user.money_saved || 0)}</strong><span>сэкономлено</span></div></section><Link className="settings-row" to="/partner"><span>Кабинет заведения</span><Icon name="arrow"/></Link><button className="text-button" onClick={() => { logout(); navigate('/'); }}>Выйти из аккаунта</button></main></Shell>;
+  if (isAuthed) return <Shell><main className="simple-page profile" id="main-content"><header><Brand/><h1>Профиль</h1></header><section className="profile-card"><div className="profile-avatar">{(user.display_name || user.name || 'М')[0]}</div><div><h2>{user.display_name || user.name}</h2><p>{user.email || user.phone}</p><p>ID: {user.public_id || `#${user.id}`}</p></div></section><section className="impact-card"><div><strong>{user.boxes_saved || 0}</strong><span>порций спасено</span></div><div><strong>{money(user.money_saved || 0)}</strong><span>сэкономлено</span></div></section><Link className="settings-row" to="/partner"><span>Войти в компанию</span><Icon name="arrow"/></Link><button className="text-button" onClick={() => { logout(); navigate('/'); }}>Выйти из аккаунта</button></main></Shell>;
   return <Shell><main className="auth-page" id="main-content"><Brand/><div className="auth-copy"><p className="eyebrow">Аккаунт Öbal</p><h1>{mode === 'login' ? 'С возвращением' : 'Создайте аккаунт'}</h1><p>{mode === 'login' ? 'Войдите, чтобы оформить заказ и сохранить код получения.' : 'Почта или телефон, пароль и ничего лишнего.'}</p></div><div className="auth-tabs"><button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Вход</button><button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Регистрация</button></div><form className="auth-form" onSubmit={submit}>
     {mode === 'register' && <><label className="field"><span>Имя</span><input value={form.name} onChange={change('name')} autoComplete="name" required/></label><div className="contact-switch"><button type="button" className={contactType === 'email' ? 'active' : ''} onClick={() => setContactType('email')}>Почта</button><button type="button" className={contactType === 'phone' ? 'active' : ''} onClick={() => setContactType('phone')}>Телефон</button></div></>}
     <label className="field"><span>{mode === 'login' ? 'Почта или телефон' : contactType === 'email' ? 'Почта' : 'Телефон'}</span><input type={mode === 'register' && contactType === 'email' ? 'email' : 'text'} value={mode === 'login' ? form.identifier : form[contactType]} onChange={change(mode === 'login' ? 'identifier' : contactType)} autoComplete={contactType === 'email' ? 'email' : 'tel'} required/></label>
     <label className="field"><span>Пароль</span><input type="password" value={form.password} onChange={change('password')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength="8" required/></label>
     {error && <p className="form-error" role="alert">{error}</p>}<button className="button auth-submit" disabled={busy}>{busy ? 'Подождите…' : mode === 'login' ? 'Войти' : 'Создать аккаунт'}</button>
-  </form><p className="auth-note">Контакт нужен для входа и бронирования. Имя и телефон, если вы его указали, увидит заведение для выдачи заказа.</p></main></Shell>;
+  </form><p className="auth-note">Контакт нужен для входа и бронирования. Имя и телефон, если вы его указали, увидит заведение для выдачи заказа.</p><Link className="settings-row" to="/partner"><span>Войти в компанию</span><Icon name="arrow"/></Link></main></Shell>;
 }
 
 function Partner() {
@@ -303,7 +304,7 @@ function Partner() {
     <section className="metrics"><div><span>Выдано заказов</span><strong>{stats.picked_up}</strong></div><div><span>Выдано за вычетом комиссии</span><strong>{money(stats.revenue)}</strong></div><div><span>Спасено порций</span><strong>{stats.portions_saved}</strong></div><div><span>Комиссия заведения</span><strong>{session.venue.commission_pct}%</strong></div></section>
     <button className="text-button" disabled={busy} onClick={() => refresh().then(() => setError('')).catch(() => setError('Не удалось обновить кабинет.'))}>Обновить данные</button>
     {showForm && <OfferForm key={editingBox?.id || 'new'} box={editingBox} onCancel={() => setShowForm(false)} onDone={() => { setShowForm(false); setEditingBox(null); refresh().catch(() => setError('Набор сохранён, но список не обновился. Нажмите «Обновить данные».')); }}/>}
-    <div className="partner-columns"><section className="offers"><h2>Наборы на сегодня</h2>{!boxes.length && <p>Предложений пока нет. Добавьте первый набор.</p>}<div className="offer-table">{boxes.map((box) => <article key={box.id}><div className="offer-name"><div><strong>{box.title}</strong><span>{box.description}</span></div></div><span>{box.pickup_start}–{box.pickup_end}</span><span>{money(box.price)}</span><span>{box.qty_left} / {box.qty_total}</span><span>{({ ACTIVE: 'Активен', SOLD_OUT: 'Разобрали', EXPIRED: 'Закрыт' })[box.status]}</span><span className="offer-actions">{box.status === 'ACTIVE' && box._count.orders === 0 && <button className="text-button" disabled={busy} onClick={() => { setEditingBox(box); setShowForm(true); }}>Изменить</button>}{box.status === 'ACTIVE' && <button className="text-button" disabled={busy} onClick={() => closeOffer(box)}>Снять</button>}</span></article>)}</div></section>
+    <div className="partner-columns"><section className="offers"><h2>Наборы на сегодня</h2>{!boxes.length && <p>Предложений пока нет. Добавьте первый набор.</p>}<div className="offer-table">{boxes.map((box) => <article key={box.id}><div className="offer-name"><div><strong>{box.title}</strong><span>{box.description}</span></div></div><span>{box.pickup_start}–{box.pickup_end}</span><span>{money(box.price)}</span><span>{box.qty_left} / {box.qty_total}</span><span>{!box.is_approved ? 'На проверке' : ({ ACTIVE: 'Активен', SOLD_OUT: 'Разобрали', EXPIRED: 'Закрыт' })[box.status]}</span><span className="offer-actions">{box.status === 'ACTIVE' && box._count.orders === 0 && <button className="text-button" disabled={busy} onClick={() => { setEditingBox(box); setShowForm(true); }}>Изменить</button>}{box.status === 'ACTIVE' && <button className="text-button" disabled={busy} onClick={() => closeOffer(box)}>Снять</button>}</span></article>)}</div></section>
     <aside className="live-orders"><h2>Выдача заказов</h2><form onSubmit={issue}><label className="field"><span>Код с экрана покупателя</span><input value={pickupCode} onChange={(e) => setPickupCode(e.target.value.toUpperCase())} required maxLength={12}/></label><button className="button" disabled={busy}>Подтвердить выдачу</button></form><h3>Ожидают получения: {active.length}</h3>{active.map((order) => <article key={order.id}><strong>Заказ №{order.id} · {order.customer_name || order.user?.name || 'Покупатель'}</strong><p>{order.box.title} × {order.qty}</p><p>{money(order.amount)}</p></article>)}</aside></div>
   </main>;
 }
@@ -339,7 +340,7 @@ function OfferForm({ box, onDone, onCancel }) {
   </form>;
 }
 
-function AppRoutes() { return <Routes><Route path="/" element={<Home/>}/><Route path="/box/:id" element={<Detail/>}/><Route path="/orders" element={<Orders/>}/><Route path="/profile" element={<Profile/>}/><Route path="/partner" element={<Partner/>}/><Route path="*" element={<Home/>}/></Routes>; }
+function AppRoutes() { return <Routes><Route path="/" element={<Home/>}/><Route path="/box/:id" element={<Detail/>}/><Route path="/orders" element={<Orders/>}/><Route path="/profile" element={<Profile/>}/><Route path="/partner" element={<Partner/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes>; }
 
 export default function App() {
   return <BrowserRouter><AuthProvider><a className="skip-link" href="#main-content">К содержанию</a><AppRoutes/><BottomNav/></AuthProvider></BrowserRouter>;

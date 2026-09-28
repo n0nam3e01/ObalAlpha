@@ -8,12 +8,12 @@ const router = Router();
 
 router.get('/', jwtMiddleware, async (req, res) => {
   const favorites = await prisma.favorite.findMany({
-    where: { user_id: req.user.userId },
+    where: { user_id: req.user.userId, venue: { is_active: true, is_approved: true } },
     include: {
       venue: {
         select: {
           ...publicVenue,
-          _count: { select: { boxes: { where: { status: 'ACTIVE', qty_left: { gt: 0 } } } } },
+          _count: { select: { boxes: { where: { status: 'ACTIVE', is_approved: true, qty_left: { gt: 0 } } } } },
         },
       },
     },
@@ -33,7 +33,7 @@ router.post('/:venueId', jwtMiddleware, async (req, res) => {
   if (!venueId) return res.status(404).json({ error: 'venue_not_found' });
 
   const venue = await prisma.venue.findUnique({ where: { id: venueId } });
-  if (!venue) return res.status(404).json({ error: 'venue_not_found' });
+  if (!venue || !venue.is_active || !venue.is_approved) return res.status(404).json({ error: 'venue_not_found' });
 
   const fav = await prisma.favorite.upsert({
     where: { user_id_venue_id: { user_id: req.user.userId, venue_id: venueId } },

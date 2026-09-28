@@ -7,6 +7,7 @@ const router = Router();
 function publicUser(user, favoritesCount) {
   return {
     id: user.id,
+    public_id: user.public_id,
     name: user.name,
     display_name: user.display_name ?? user.name,
     username: user.username,

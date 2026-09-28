@@ -36,8 +36,15 @@ enum OrderStatus {
   NO_SHOW
 }
 
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
 model User {
   id            Int      @id @default(autoincrement())
+  public_id     String?  @unique
+  role          UserRole @default(CUSTOMER)
   telegram_id   BigInt?  @unique
   name          String
   display_name  String?
@@ -79,6 +86,7 @@ model Venue {
   rating_avg           Float         @default(0)
   rating_count         Int           @default(0)
   is_active            Boolean       @default(true)
+  is_approved          Boolean       @default(true)
   created_at           DateTime      @default(now())
 
   boxes     Box[]
@@ -103,6 +111,7 @@ model Box {
   pickup_date    DateTime  @db.Date
   photo_url      String?
   status         BoxStatus @default(ACTIVE)
+  is_approved    Boolean   @default(true)
   created_at     DateTime  @default(now())
 
   orders Order[]

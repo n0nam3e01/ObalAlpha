@@ -35,10 +35,11 @@ router.get('/', async (req, res) => {
 
   const where = {
     status: 'ACTIVE',
+    is_approved: true,
     qty_left: { gt: 0 },
     pickup_end: { gt: nowHHMM() },
     pickup_date: { gte: today, lt: tomorrow },
-    venue: { is_active: true },
+    venue: { is_active: true, is_approved: true },
   };
 
   if (process.env.DEBUG_BOXES === 'true') {
@@ -95,10 +96,10 @@ router.get('/:id', async (req, res) => {
   const box = await prisma.box.findUnique({
     where: { id },
     include: {
-      venue: { select: publicVenue },
+      venue: { select: { ...publicVenue, is_approved: true } },
     },
   });
-  if (!box || !box.venue.is_active) return res.status(404).json({ error: 'box_not_found' });
+  if (!box || !box.is_approved || !box.venue.is_active || !box.venue.is_approved) return res.status(404).json({ error: 'box_not_found' });
 
   res.json({ ...box, discount_pct: discountPct(box.original_price, box.price) });
 });

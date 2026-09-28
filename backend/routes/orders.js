@@ -41,8 +41,8 @@ router.post('/', jwtMiddleware, rateLimit({ max: 20, key: (req) => req.user.user
       return afterLock;
     }
     const box = await tx.box.findFirst({
-      where: { id: boxId, status: 'ACTIVE', qty_left: { gte: quantity },
-        pickup_date: startOfToday(), venue: { is_active: true } },
+      where: { id: boxId, status: 'ACTIVE', is_approved: true, qty_left: { gte: quantity },
+        pickup_date: startOfToday(), venue: { is_active: true, is_approved: true } },
       include: { venue: { select: { commission_pct: true } } },
     });
     const until = box && pickupInstant(box.pickup_date, box.pickup_end);
