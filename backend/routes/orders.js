@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const { randomBytes } = require('crypto');
+const { allocatePickupCode } = require('../lib/pickupCode');
 const prisma = require('../lib/prisma');
 const { jwtMiddleware } = require('../lib/auth');
 const { toId, toInt } = require('../lib/params');
@@ -51,11 +51,12 @@ router.post('/', jwtMiddleware, rateLimit({ max: 20, key: (req) => req.user.user
       qty_left: { decrement: quantity }, status: box.qty_left === quantity ? 'SOLD_OUT' : 'ACTIVE',
     } });
     const amount = box.price * quantity;
+    const pickupCode = await allocatePickupCode(tx, box.venue_id);
     const booked = await tx.order.create({ data: {
       user_id: me.id, box_id: box.id, qty: quantity, amount,
       commission: Math.round(amount * box.venue.commission_pct / 100),
       service_fee: 0, delivery_fee: 0, fulfillment: 'PICKUP',
-      pickup_code: randomBytes(6).toString('hex').toUpperCase(), idempotency_key: idempotency_key || null,
+      pickup_code: pickupCode, idempotency_key: idempotency_key || null,
       reserved_until: until, customer_name: me.display_name || me.name, customer_phone: me.phone,
     }, include });
     created = true;

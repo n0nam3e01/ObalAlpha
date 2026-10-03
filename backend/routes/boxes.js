@@ -59,6 +59,7 @@ router.get('/', async (req, res) => {
     where,
     include: {
       venue: { select: { id: true, name: true, category: true, address: true, district: true, geo_lat: true, geo_lng: true, photo_url: true, rating_avg: true, rating_count: true } },
+      _count: { select: { orders: { where: { status: { in: ['RESERVED', 'PAID', 'PICKED_UP'] } } } } },
     },
   });
 
@@ -72,6 +73,8 @@ router.get('/', async (req, res) => {
   boxes = boxes.map((b) => ({
     ...b,
     discount_pct: discountPct(b.original_price, b.price),
+    popularity_today: b._count.orders,
+    _count: undefined,
     distance_km:
       hasGeo && Number.isFinite(b.venue.geo_lat) && Number.isFinite(b.venue.geo_lng)
         ? Math.round(haversineKm(userLat, userLng, b.venue.geo_lat, b.venue.geo_lng) * 10) / 10

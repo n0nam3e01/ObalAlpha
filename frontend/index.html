@@ -7,6 +7,14 @@
     <meta name="description" content="Забирайте свежую еду из пекарен, кафе и магазинов Астаны со скидкой до 70%." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#FBF5F3" />
+    <script>
+      try {
+        var savedTheme = localStorage.getItem('obal_theme');
+        var darkTheme = savedTheme === 'dark' || (savedTheme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = darkTheme ? 'dark' : 'light';
+        document.querySelector('meta[name="theme-color"]').content = darkTheme ? '#191619' : '#fbf5f3';
+      } catch (_) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />

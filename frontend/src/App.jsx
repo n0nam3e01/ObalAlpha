@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { BrowserRouter, Link, Route, Routes, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiFetch } from './lib/api';
 import { getVenueToken, setVenueToken, venueAuth, venueFetch } from './lib/venueApi';
 import Admin from './screens/Admin/Admin';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import Support from './screens/Support';
 
 const images = [
   'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=85',
@@ -46,15 +48,27 @@ function Shell({ children }) {
   return <div className="consumer-shell">{children}</div>;
 }
 
+function AppHeader() {
+  const { pathname } = useLocation();
+  const { user } = useAuth();
+  if (pathname === '/partner' || pathname === '/admin') return null;
+  return <header className="home-head app-header"><Brand/><span className="location"><Icon name="pin" size={18}/><span>Астана</span></span><Link className="avatar" to="/profile" aria-label="Профиль">{user ? (user.display_name || user.name || 'М')[0] : <Icon name="user" size={19}/>}</Link></header>;
+}
+
+function ThemeSettings() {
+  const { theme, setTheme } = useTheme();
+  return <><section className="theme-settings" aria-label="Настройки темы"><div><strong>Тема приложения</strong><p>Выберите, как выглядит Öbal</p></div><div className="theme-options" role="group" aria-label="Тема приложения">{[['light', 'Светлая'], ['dark', 'Тёмная'], ['system', 'Как на устройстве']].map(([value, label]) => <button key={value} type="button" aria-pressed={theme === value} className={theme === value ? 'active' : ''} onClick={() => setTheme(value)}>{label}</button>)}</div></section><Link className="settings-row" to="/support"><span>Поддержка Öbal</span><Icon name="arrow"/></Link></>;
+}
+
 function BottomNav() {
   const { pathname, search } = useLocation();
   const [instant, setInstant] = useState(false);
   if (pathname.startsWith('/box/') || pathname === '/partner' || pathname === '/admin') return null;
-  const selected = pathname === '/orders' ? 2 : pathname === '/profile' ? 3
+  const selected = pathname === '/orders' ? 2 : ['/profile', '/support'].includes(pathname) ? 3 : pathname === '/search' ? 1
     : new URLSearchParams(search).get('focus') === 'search' ? 1 : 0;
   const tabs = [
     { to: '/', icon: 'home', label: 'Главная' },
-    { to: '/?focus=search', icon: 'search', label: 'Поиск' },
+    { to: '/search', icon: 'search', label: 'Поиск' },
     { to: '/orders', icon: 'bag', label: 'Заказы' },
     { to: '/profile', icon: 'user', label: 'Профиль' },
   ];
@@ -107,9 +121,8 @@ function Home() {
   }), [boxes, category, query]);
 
   return <Shell><main className="home" id="main-content">
-    <header className="home-head"><Brand/><span className="location"><Icon name="pin" size={18}/><span>Астана</span></span><Link className="avatar" to="/profile" aria-label="Профиль">М</Link></header>
     <section className="intro">
-      <div className="search-box"><Icon name="search"/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Что спасём сегодня?" aria-label="Поиск предложений"/></div>
+      <Link className="search-box search-entry" to="/search"><Icon name="search"/><span>Найти еду или заведение</span><Icon name="arrow" size={18}/></Link>
       <div className="hero-copy"><p className="eyebrow">Еда с хорошим продолжением</p><h1>Заберите сегодня дешевле</h1><p>Еда из заведений рядом со скидкой. Заберите сегодня в указанное время.</p></div>
     </section>
     <div className="category-row" aria-label="Категории">{Object.entries(categoryLabels).map(([key, label]) => <button key={key} className={category === key ? 'active' : ''} onClick={() => setCategory(key)}>{label}</button>)}</div>
@@ -125,19 +138,52 @@ function Home() {
   </main></Shell>;
 }
 
-function GoogleMap({ boxes }) {
+function Search() {
+  const [boxes, setBoxes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [params, setParams] = useSearchParams();
+  const venueId = params.get('venue');
+  useEffect(() => {
+    let active = true;
+    apiFetch('/boxes', { skipAuth: true }).then((data) => { if (active) setBoxes(data); })
+      .catch(() => { if (active) setError('Не удалось загрузить предложения. Обновите страницу.'); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+  const venues = [...new Map(boxes.map((box) => [box.venue.id, box.venue])).values()];
+  const selectedVenue = venues.find((venue) => String(venue.id) === venueId);
+  const filtered = boxes.filter((box) => (!venueId || String(box.venue.id) === venueId) && `${box.title} ${box.venue.name} ${box.items || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const searching = query.trim() || venueId;
+  const popular = [...boxes].sort((a, b) => (b.popularity_today || 0) - (a.popularity_today || 0) || b.discount_pct - a.discount_pct).slice(0, 4);
+  const recommended = [...boxes].sort((a, b) => b.discount_pct - a.discount_pct || a.price - b.price).slice(0, 4);
+  return <Shell><main className="search-page simple-page" id="main-content"><header><p className="eyebrow">Откройте что-то вкусное</p><h1>Поиск</h1></header>
+    <div className="search-box"><Icon name="search"/><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Еда, набор или заведение" aria-label="Поиск еды и заведений"/>{query && <button className="search-clear" onClick={() => setQuery('')} aria-label="Очистить поиск">×</button>}</div>
+    {selectedVenue && <button className="venue-filter" onClick={() => setParams({})}>{selectedVenue.name}<span aria-hidden="true">×</span><span className="sr-only">Сбросить фильтр заведения</span></button>}
+    {loading && <p className="search-status" role="status">Подбираем предложения…</p>}{error && <p className="form-error" role="alert">{error}</p>}
+    {!loading && !error && (searching ? <section className="discovery-section"><h2>{selectedVenue ? 'Предложения заведения' : 'Результаты поиска'}</h2><p>{filtered.length ? `Найдено: ${filtered.length}` : 'Попробуйте другой запрос или сбросьте фильтр.'}</p><div className="deal-grid">{filtered.map((box, index) => <DealCard key={box.id} box={box} index={index}/>)}</div></section> : <>
+      <section className="discovery-section"><h2>Заведения рядом</h2><p>Сегодня в Астане</p><div className="venue-grid">{venues.map((venue) => <button className="venue-tile" key={venue.id} onClick={() => setParams({ venue: String(venue.id) })}><span className="venue-logo" aria-hidden="true">{venue.name.startsWith('Öbal') ? 'ö' : venue.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('')}</span><strong>{venue.name}</strong><span>{venue.district}</span></button>)}</div>{!venues.length && <p>Заведения появятся вместе с новыми предложениями.</p>}</section>
+      {boxes.length > 0 && <><section className="discovery-section"><h2>Популярно сегодня</h2><p>{boxes.some((box) => box.popularity_today > 0) ? 'Наборы, которые чаще бронируют сегодня' : 'Пока мало заказов — начните с выгодных предложений'}</p><div className="deal-grid">{popular.map((box, index) => <DealCard key={box.id} box={box} index={index}/>)}</div></section>
+      <section className="discovery-section"><h2>Рекомендуем попробовать</h2><p>Хорошая скидка и самовывоз сегодня</p><div className="deal-grid">{recommended.map((box, index) => <DealCard key={box.id} box={box} index={index}/>)}</div></section></>}
+    </>)}
+  </main></Shell>;
+}
+
+function GoogleMap({ boxes, compact = false }) {
   const [selectedId, setSelectedId] = useState(null);
   const venues = [...new Map(boxes.map((box) => [box.venue.id, box.venue])).values()];
   const selected = venues.find((venue) => venue.id === selectedId) || venues[0];
-  if (!selected) return null;
-  const query = encodeURIComponent(`${selected.geo_lat},${selected.geo_lng}`);
-  return <section className="map-panel">
-    <iframe title={`${selected.name} на Google Maps`} src={`https://www.google.com/maps?q=${query}&z=14&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>
-    <div className="map-results"><strong>Заведения с предложениями</strong>
+  const query = encodeURIComponent(selected ? `${selected.geo_lat},${selected.geo_lng}` : '51.1283,71.4305');
+  return <section className={`map-panel${compact ? ' map-panel--pickup' : ''}`} aria-label={compact ? 'Место самовывоза' : 'Карта заведений Астаны'}>
+    <iframe title={selected ? `${selected.name} на Google Maps` : 'Астана на Google Maps'} src={`https://www.google.com/maps?q=${query}&z=${selected ? 16 : 12}&output=embed&hl=ru`} loading="lazy" allowFullScreen referrerPolicy="no-referrer-when-downgrade"/>
+    <div className="map-results"><strong>{compact ? 'Где забрать заказ' : 'Заведения с предложениями'}</strong>
+      {!selected && <p>Пока нет предложений. Здесь будут показаны заведения Астаны.</p>}
+      {compact && selected ? <p>{selected.name}<br/>{selected.address}</p> :
       <div className="map-results__list">{venues.map((venue) => <button key={venue.id} type="button" className={venue.id === selected.id ? 'active' : ''} onClick={() => setSelectedId(venue.id)} aria-pressed={venue.id === selected.id}>
         <strong>{venue.name}</strong><span>{venue.address}</span>
-      </button>)}</div>
-      <a href={`https://www.google.com/maps/search/?api=1&query=${query}`} target="_blank" rel="noreferrer">Открыть маршрут в Google Maps</a>
+      </button>)}</div>}
+      {selected && <a href={`https://www.google.com/maps/dir/?api=1&destination=${query}`} target="_blank" rel="noreferrer">Построить маршрут в Google Maps ↗</a>}
     </div>
   </section>;
 }
@@ -176,7 +222,7 @@ function Detail() {
     <article className="detail-body"><p className="eyebrow">{box.venue.name}{box.venue.rating_count > 0 ? ' · ' + box.venue.rating_avg : ''}</p><h1>{box.title}</h1>
       <div className="detail-price"><strong>{money(box.price)}</strong><s>{money(box.original_price)}</s><span>Экономия {box.discount_pct}%</span></div>
       <p className="detail-description">{box.description}</p>{box.items && <p>{box.items}</p>}
-      <section className="pickup-info"><Icon name="clock"/><div><strong>Самовывоз · {new Date(box.pickup_date).toLocaleDateString('ru-RU', { timeZone: 'UTC' })}, {box.pickup_start}–{box.pickup_end}</strong><p>{box.venue.address}</p><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(box.venue.geo_lat + ',' + box.venue.geo_lng)} target="_blank" rel="noreferrer">Открыть в Google Maps</a></div></section>
+      <section className="pickup-info"><Icon name="clock"/><div><strong>Самовывоз · {new Date(box.pickup_date).toLocaleDateString('ru-RU', { timeZone: 'UTC' })}, {box.pickup_start}–{box.pickup_end}</strong><p>{box.venue.address}</p></div><GoogleMap boxes={[box]} compact/></section>
       <div className="quantity"><div><strong>Количество</strong><p>Осталось {box.qty_left}</p></div><div className="stepper"><button disabled={qty <= 1 || busy} onClick={() => { setQty(qty - 1); setRequestKey(crypto.randomUUID()); }} aria-label="Уменьшить">−</button><span>{qty}</span><button disabled={qty >= Math.min(3, box.qty_left) || busy} onClick={() => { setQty(qty + 1); setRequestKey(crypto.randomUUID()); }} aria-label="Увеличить">+</button></div></div>
       <p>Оплата в заведении при получении. Сумма к оплате указана выше; доставка и сервисный сбор не добавляются.</p>
     </article>
@@ -208,7 +254,7 @@ function Orders() {
     catch { setError('Не удалось отменить заказ. Обновите список перед повторной попыткой.'); }
     finally { setBusy(null); }
   }
-  return <Shell><main className="simple-page" id="main-content"><header><Brand/><h1>Ваши заказы</h1></header>
+  return <Shell><main className="simple-page" id="main-content"><header><h1>Ваши заказы</h1></header>
     {error && <p className="form-error" role="alert">{error}</p>}
     {authLoading || loading ? <p role="status">Загружаем…</p> : !isAuthed
       ? <Empty title="Сначала войдите" text="После входа здесь появятся заказы и коды получения." action={<Link className="button" to="/profile">Войти</Link>}/>
@@ -238,8 +284,8 @@ function Profile() {
     } catch (err) { setError(errorText[err.code] || 'Не получилось войти. Проверьте данные.'); }
     finally { setBusy(false); }
   }
-  if (isAuthed) return <Shell><main className="simple-page profile" id="main-content"><header><Brand/><h1>Профиль</h1></header><section className="profile-card"><div className="profile-avatar">{(user.display_name || user.name || 'М')[0]}</div><div><h2>{user.display_name || user.name}</h2><p>{user.email || user.phone}</p><p>ID: {user.public_id || `#${user.id}`}</p></div></section><section className="impact-card"><div><strong>{user.boxes_saved || 0}</strong><span>порций спасено</span></div><div><strong>{money(user.money_saved || 0)}</strong><span>сэкономлено</span></div></section><Link className="settings-row" to="/partner"><span>Войти в компанию</span><Icon name="arrow"/></Link><button className="text-button" onClick={() => { logout(); navigate('/'); }}>Выйти из аккаунта</button></main></Shell>;
-  return <Shell><main className="auth-page" id="main-content"><Brand/><div className="auth-copy"><p className="eyebrow">Аккаунт Öbal</p><h1>{mode === 'login' ? 'С возвращением' : 'Создайте аккаунт'}</h1><p>{mode === 'login' ? 'Войдите, чтобы оформить заказ и сохранить код получения.' : 'Почта или телефон, пароль и ничего лишнего.'}</p></div><div className="auth-tabs"><button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Вход</button><button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Регистрация</button></div><form className="auth-form" onSubmit={submit}>
+  if (isAuthed) return <Shell><main className="simple-page profile" id="main-content"><header><h1>Профиль</h1></header><section className="profile-card"><div className="profile-avatar">{(user.display_name || user.name || 'М')[0]}</div><div><h2>{user.display_name || user.name}</h2><p>{user.email || user.phone}</p><p>ID: {user.public_id || `#${user.id}`}</p></div></section><section className="impact-card"><div><strong>{user.boxes_saved || 0}</strong><span>порций спасено</span></div><div><strong>{money(user.money_saved || 0)}</strong><span>сэкономлено</span></div></section><ThemeSettings/><Link className="settings-row" to="/partner"><span>Войти в компанию</span><Icon name="arrow"/></Link><button className="text-button" onClick={() => { logout(); navigate('/'); }}>Выйти из аккаунта</button></main></Shell>;
+  return <Shell><main className="auth-page" id="main-content"><ThemeSettings/><div className="auth-copy"><p className="eyebrow">Аккаунт Öbal</p><h1>{mode === 'login' ? 'С возвращением' : 'Создайте аккаунт'}</h1><p>{mode === 'login' ? 'Войдите, чтобы оформить заказ и сохранить код получения.' : 'Почта или телефон, пароль и ничего лишнего.'}</p></div><div className="auth-tabs"><button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Вход</button><button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Регистрация</button></div><form className="auth-form" onSubmit={submit}>
     {mode === 'register' && <><label className="field"><span>Имя</span><input value={form.name} onChange={change('name')} autoComplete="name" required/></label><div className="contact-switch"><button type="button" className={contactType === 'email' ? 'active' : ''} onClick={() => setContactType('email')}>Почта</button><button type="button" className={contactType === 'phone' ? 'active' : ''} onClick={() => setContactType('phone')}>Телефон</button></div></>}
     <label className="field"><span>{mode === 'login' ? 'Почта или телефон' : contactType === 'email' ? 'Почта' : 'Телефон'}</span><input type={mode === 'register' && contactType === 'email' ? 'email' : 'text'} value={mode === 'login' ? form.identifier : form[contactType]} onChange={change(mode === 'login' ? 'identifier' : contactType)} autoComplete={contactType === 'email' ? 'email' : 'tel'} required/></label>
     <label className="field"><span>Пароль</span><input type="password" value={form.password} onChange={change('password')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength="8" required/></label>
@@ -340,8 +386,12 @@ function OfferForm({ box, onDone, onCancel }) {
   </form>;
 }
 
-function AppRoutes() { return <Routes><Route path="/" element={<Home/>}/><Route path="/box/:id" element={<Detail/>}/><Route path="/orders" element={<Orders/>}/><Route path="/profile" element={<Profile/>}/><Route path="/partner" element={<Partner/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes>; }
+function AppRoutes() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [pathname]);
+  return <div className="page-transition" key={pathname}><Routes><Route path="/" element={<Home/>}/><Route path="/search" element={<Search/>}/><Route path="/support" element={<Support/>}/><Route path="/box/:id" element={<Detail/>}/><Route path="/orders" element={<Orders/>}/><Route path="/profile" element={<Profile/>}/><Route path="/partner" element={<Partner/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes></div>;
+}
 
 export default function App() {
-  return <BrowserRouter><AuthProvider><a className="skip-link" href="#main-content">К содержанию</a><AppRoutes/><BottomNav/></AuthProvider></BrowserRouter>;
+  return <BrowserRouter><ThemeProvider><AuthProvider><a className="skip-link" href="#main-content">К содержанию</a><AppHeader/><AppRoutes/><BottomNav/></AuthProvider></ThemeProvider></BrowserRouter>;
 }

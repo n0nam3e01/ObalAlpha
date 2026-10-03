@@ -109,6 +109,7 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     const attempts = await Promise.all([book(), book()]);
     assert.deepEqual(attempts.map((r) => r.status).sort(), [201, 409]);
     const first = attempts.find((r) => r.status === 201).data;
+    assert.match(first.pickup_code, /^[1-9]\d{5}$/);
     noSecrets(first);
     assert.equal(first.amount, 1000); assert.equal(first.service_fee, 0); assert.equal(first.delivery_fee, 0);
     assert.equal(first.reserved_until, pickupInstant(startOfToday(), '23:59').toISOString());
@@ -137,6 +138,8 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.deepEqual(repeated.map((r) => r.status).sort(), [200, 201]);
     assert.equal(repeated[0].data.id, repeated[1].data.id);
     assert.equal((await prisma.box.findUnique({ where: { id: repeatable.id } })).qty_left, 1);
+    const publicFeed = (await api('/boxes')).data;
+    assert.equal(publicFeed.find((item) => item.id === repeatable.id).popularity_today, 1);
     assert.equal((await api('/orders', { method: 'POST', token: buyer.token, body: { box_id: box.id, idempotency_key: idempotencyKey } })).status, 409);
     assert.equal((await api('/venue/boxes/' + repeatable.id, { method: 'PATCH', venueToken: shop.venue_token, body: { status: 'EXPIRED' } })).status, 200);
     assert.equal((await prisma.order.findUnique({ where: { id: repeated[0].data.id } })).status, 'RESERVED');

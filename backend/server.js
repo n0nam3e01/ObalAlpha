@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const prisma = require('./lib/prisma');
 const { startCron } = require('./lib/cron');
+const { configureSupportWebhook } = require('./lib/supportBot');
 
 const app = express();
 app.disable('x-powered-by');
@@ -20,7 +21,7 @@ app.use((req, res, next) => {
   }
   next();
 });
-for (const route of ['auth', 'boxes', 'orders', 'favorites', 'ratings', 'me', 'venue', 'admin']) {
+for (const route of ['auth', 'boxes', 'orders', 'favorites', 'ratings', 'me', 'venue', 'admin', 'support']) {
   app.use(`/api/${route}`, require(`./routes/${route}`));
 }
 app.get('/api/health', async (_req, res) => {
@@ -47,6 +48,10 @@ async function start() {
   await prisma.$connect();
   const server = app.listen(Number(process.env.PORT || 3000), process.env.HOST || '0.0.0.0', () => console.log('Obal API listening'));
   const scheduler = startCron();
+  // Optional support setup must not take the marketplace API down on Telegram errors.
+  configureSupportWebhook().then((username) => {
+    if (username) console.log(`Support webhook configured for @${username}`);
+  }).catch(() => console.error('Support webhook setup failed; check support environment settings'));
   const shutdown = () => {
     scheduler.stop();
     server.close(async () => { await prisma.$disconnect(); process.exit(0); });
