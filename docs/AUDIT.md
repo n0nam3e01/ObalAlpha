@@ -17,10 +17,10 @@
 
 | Проблема | Где | Статус |
 | --- | --- | --- |
-| 70 файлов не импортируются ни одним модулем: `components/*`, `screens/{Home,BoxDetail,Orders,Profile,Reserve,Ticket,Venue,VenueDetail,Favorites}`, `i18n/*`, `context/ToastContext.jsx`, `lib/{avatars,format,haptics,theme,useCountUp,useReducedMotion}.js`, `styles/motion.css`. Это старый прототип Telegram Mini App. Новый разработчик правит не тот файл. | `frontend/src` | [открыто] удаление было заблокировано политикой авто-режима, см. «Что нужно от вас» |
+| 71 файл не импортируется ни одним модулем: `components/*`, `screens/{Home,BoxDetail,Orders,Profile,Reserve,Ticket,Venue,VenueDetail,Favorites}`, `i18n/*`, `context/ToastContext.jsx`, `lib/{avatars,format,haptics,theme,useCountUp,useReducedMotion}.js`, `styles/motion.css`. Это старый прототип Telegram Mini App. Новый разработчик правит не тот файл. | `frontend/src` | [исправлено] удалены |
 | Всё клиентское приложение в одном `App.jsx`, JSX в одну строку длиной до 1500 символов. Дифы нечитаемы, конфликты слияния неизбежны. | `frontend/src/App.jsx` | [исправлено] экраны разнесены в `src/pages/*`, общие элементы в `src/ui.jsx`, `App.jsx` — 70 строк каркаса |
 | CSS в трёх слоях (`index.css`, `App.css`, `fixes.css`) с переопределениями одних и тех же правил ниже по файлу; строки по 2000 символов. | `frontend/src/*.css` | [открыто] новые стили вынесены в `pages.css`; `App.css` стоит разбить по экранам и убрать переопределения |
-| `lib/telegram.js` использует `TELEGRAM_BOT_TOKEN`, нигде не подключён. | `backend/lib` | [открыто] удалить вместе с мёртвым фронтендом |
+| `lib/telegram.js` использует `TELEGRAM_BOT_TOKEN`, нигде не подключён. | `backend/lib` | [исправлено] удалён |
 | Поля прототипа в схеме: `User.telegram_id`, `username`, `photo_url`, `Order.fulfillment` (строка, всегда `PICKUP`), `delivery_address`, `service_fee`, `delivery_fee`, статус `PAID`, `Venue.kaspi_info`, `payout_details`. | `schema.prisma` | [открыто] оставлены ради истории; при следующей большой миграции — удалить или задокументировать |
 | Валидация повторяется вручную в каждом маршруте разными способами (`typeof` в admin, `toInt` в venue, частично в me). Расхождения уже привели к пробелам (см. «Backend»). | `backend/routes` | [открыто] одна схема на маршрут (zod или собственный helper) |
 | Нет линтера, форматтера и CI. Тесты запускаются только вручную. | репозиторий | [открыто] GitHub Actions: `npm test` с сервисом postgres + `vite build` |
@@ -136,23 +136,13 @@
 
 ## Приоритеты
 
-1. Удалить мёртвый код фронтенда и `lib/telegram.js` (одна команда, см. ниже).
-2. CI: тесты backend с postgres + сборка frontend на каждый PR.
-3. Восстановление пароля, подтверждение контакта, удаление аккаунта — до публичного запуска.
-4. Хэшировать коды и токены заведений, не отдавать `access_code` клиенту; укоротить клиентский JWT.
-5. Платный Render (без сна) или другой постоянный хостинг, Sentry, бэкапы Supabase с проверкой восстановления.
-6. Уведомления заведению о новой брони.
-7. Выполнить `prisma/sql/validate_constraints.sql` на production после проверки данных.
+1. CI: тесты backend с postgres + сборка frontend на каждый PR.
+2. Восстановление пароля, подтверждение контакта, удаление аккаунта — до публичного запуска.
+3. Хэшировать коды и токены заведений, не отдавать `access_code` клиенту; укоротить клиентский JWT.
+4. Платный Render (без сна) или другой постоянный хостинг, Sentry, бэкапы Supabase с проверкой восстановления.
+5. Уведомления заведению о новой брони.
+6. Выполнить `prisma/sql/validate_constraints.sql` на production после проверки данных.
 
-## Что нужно от вас
+## Выполнено после аудита
 
-Удаление 70 неиспользуемых файлов было заблокировано политикой авто-режима как необратимое. Список проверен скриптом обхода импортов от `main.jsx`. Команда для удаления (история остаётся в git):
-
-```sh
-cd frontend/src
-git rm -r components i18n context/ToastContext.jsx styles/motion.css \
-  lib/avatars.js lib/format.js lib/haptics.js lib/theme.js lib/useCountUp.js lib/useReducedMotion.js \
-  screens/BoxDetail screens/Favorites screens/Home screens/Orders screens/Profile \
-  screens/Reserve screens/Ticket screens/Venue screens/VenueDetail screens/.gitkeep
-git rm ../../backend/lib/telegram.js
-```
+Удалены 71 неиспользуемый файл фронтенда (4 769 строк) и `backend/lib/telegram.js`. Обход импортов от `main.jsx` после удаления не находит мёртвых файлов.
