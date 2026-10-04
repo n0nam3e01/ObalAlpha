@@ -32,44 +32,37 @@ async function computeTodayStats(venueId, commissionPct) {
   const today = startOfToday();
   const tomorrow = endOfToday();
 
-  const [boxesPosted, qtyAgg, activeOrders, pickedAgg] = await Promise.all([
+  const dayStart = todayInstant();
+  const dayEnd = new Date(dayStart.getTime() + 86400000);
+  const [boxesPosted, qtyAgg, picked, waiting] = await Promise.all([
     prisma.box.count({ where: { venue_id: venueId, pickup_date: { gte: today, lt: tomorrow } } }),
     prisma.box.aggregate({
       where: { venue_id: venueId, pickup_date: { gte: today, lt: tomorrow } },
       _sum: { qty_total: true },
     }),
     prisma.order.aggregate({
-      where: {
-        box: { venue_id: venueId },
-        status: 'PICKED_UP',
-        created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
-      },
+      where: { box: { venue_id: venueId }, status: 'PICKED_UP', created_at: { gte: dayStart, lt: dayEnd } },
       _count: true,
       _sum: { amount: true, qty: true, commission: true },
     }),
-    prisma.order.aggregate({
-      where: {
-        box: { venue_id: venueId },
-        status: 'PICKED_UP',
-        created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
-      },
-      _count: true,
-      _sum: { qty: true },
+    prisma.order.count({
+      where: { box: { venue_id: venueId }, status: { in: ['RESERVED', 'PAID'] }, reserved_until: { gt: new Date() } },
     }),
   ]);
 
-  const grossRevenue = activeOrders._sum.amount ?? 0;
-  const venueShare = grossRevenue - (activeOrders._sum.commission ?? 0);
+  const grossRevenue = picked._sum.amount ?? 0;
+  const venueShare = grossRevenue - (picked._sum.commission ?? 0);
 
   return {
     boxes_posted: boxesPosted,
     qty_total: qtyAgg._sum.qty_total ?? 0,
-    orders_sold: activeOrders._count ?? 0,
-    qty_sold: activeOrders._sum.qty ?? 0,
-    revenue: venueShare,           // venue's 85% share
+    orders_sold: picked._count ?? 0,
+    qty_sold: picked._sum.qty ?? 0,
+    revenue: venueShare,           // after the venue's commission_pct
     revenue_gross: grossRevenue,
-    portions_saved: pickedAgg._sum.qty ?? 0,
-    picked_up: pickedAgg._count ?? 0,
+    portions_saved: picked._sum.qty ?? 0,
+    picked_up: picked._count ?? 0,
+    waiting,
   };
 }
 
@@ -109,6 +102,7 @@ router.patch('/me', venueAuth, async (req, res) => {
   for (const f of ['name', 'address', 'contact_phone', 'kaspi_info', 'photo_url']) {
     if (b[f] !== undefined && (typeof b[f] !== 'string' || b[f].length > 2000)) return res.status(400).json({ error: 'field_invalid' });
   }
+  if (b.photo_url && !/^https:\/\//.test(b.photo_url)) return res.status(400).json({ error: 'photo_invalid' });
   if (b.is_active !== undefined && typeof b.is_active !== 'boolean') return res.status(400).json({ error: 'field_invalid' });
   for (const f of ['default_pickup_start', 'default_pickup_end']) {
     if (b[f] && !pickupInstant(startOfToday(), b[f])) return res.status(400).json({ error: 'pickup_window_invalid' });
@@ -161,7 +155,7 @@ router.get('/payout', venueAuth, async (req, res) => {
 
 // ── POST /venue/boxes — create a box ──
 router.post('/boxes', venueAuth, async (req, res) => {
-  const { title, type, description, items, price, original_price, qty, pickup_start, pickup_end, photo_url, category } = req.body;
+  const { title, type, description, items, price, original_price, qty, pickup_start, pickup_end, photo_url } = req.body;
   if (!req.venue.is_active || !req.venue.is_approved) return res.status(409).json({ error: 'venue_inactive' });
   if (typeof title !== 'string' || !title.trim() || title.length > 160 ||
       (description !== undefined && (typeof description !== 'string' || description.length > 4000)) ||
@@ -218,11 +212,6 @@ router.post('/boxes', venueAuth, async (req, res) => {
       is_approved: false,
     },
   });
-
-  // Optionally persist a new venue category if the box changed it.
-  if (category && VENUE_CATEGORIES.includes(category) && category !== req.venue.category) {
-    await prisma.venue.update({ where: { id: req.venue.id }, data: { category } }).catch(() => {});
-  }
 
   res.status(201).json(box);
 });
@@ -328,7 +317,7 @@ router.get('/orders', venueAuth, async (req, res) => {
     },
     include: {
       user: { select: { id: true, display_name: true, name: true, phone: true } },
-      box: { select: { id: true, title: true, type: true } },
+      box: { select: { id: true, title: true, type: true, pickup_start: true, pickup_end: true } },
     },
     orderBy: { created_at: 'desc' },
   });
@@ -365,7 +354,7 @@ router.post('/pickup', venueAuth, rateLimit({ max: 20 }), async (req, res) => {
 });
 
 // ── POST /venue/orders/:id/pickup — per-row issue (kept for inline action) ──
-router.post('/orders/:id/pickup', venueAuth, async (req, res) => {
+router.post('/orders/:id/pickup', venueAuth, rateLimit({ max: 20 }), async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: 'code_required' });
 
