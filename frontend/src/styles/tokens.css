@@ -26,14 +26,14 @@
   --amber: #b9771a;
   --danger: #a53224;
 
-  --font: 'Golos Text', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Space Mono', 'SF Mono', ui-monospace, Menlo, monospace;
 
   /* Type scale follows Apple's iOS text styles. */
-  --t-large: clamp(32px, 7vw, 40px);
-  --t-title1: 28px;
-  --t-title2: 22px;
-  --t-title3: 20px;
+  --t-large: clamp(30px, 7vw, 36px);
+  --t-title1: 26px;
+  --t-title2: 20px;
+  --t-title3: 18px;
   --t-headline: 17px;
   --t-body: 16px;
   --t-callout: 15px;
@@ -41,7 +41,8 @@
   --t-footnote: 13px;
   --t-caption: 12px;
 
-  --gutter: clamp(16px, 4.5vw, 28px);
+  --gutter: clamp(20px, 5vw, 28px);
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
   --radius-xs: 8px;
   --radius-sm: 12px;
   --radius-md: 18px;
