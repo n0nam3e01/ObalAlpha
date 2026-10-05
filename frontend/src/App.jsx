@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect } from 'react';
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -10,18 +10,18 @@ import BoxDetail from './pages/BoxDetail';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import Partner from './pages/Partner';
-import { Brand, Icon } from './ui';
+import { Brand, Icon, useViewNavigate } from './ui';
 
 const standalone = (pathname) => pathname === '/partner' || pathname === '/admin';
 
 function AppHeader() {
   const { pathname } = useLocation();
   const { user } = useAuth();
-  if (standalone(pathname)) return null;
-  return <header className="home-head app-header">
+  if (standalone(pathname) || pathname.startsWith('/box/')) return null;
+  return <header className="app-header">
     <Brand/>
-    <span className="location"><Icon name="pin" size={18}/><span>Астана</span></span>
-    <Link className="avatar" to="/profile" aria-label="Профиль">{user ? (user.display_name || user.name || 'М')[0] : <Icon name="user" size={19}/>}</Link>
+    <span className="location"><Icon name="pin" size={16}/><span>Астана</span></span>
+    <Link className="avatar" to="/profile" aria-label="Профиль">{user ? (user.display_name || user.name || 'М')[0] : <Icon name="user" size={18}/>}</Link>
   </header>;
 }
 
@@ -34,15 +34,20 @@ const tabs = [
 
 function BottomNav() {
   const { pathname } = useLocation();
-  const [instant, setInstant] = useState(false);
+  const go = useViewNavigate();
   if (pathname.startsWith('/box/') || standalone(pathname)) return null;
   const selected = pathname === '/orders' ? 2 : ['/profile', '/support'].includes(pathname) ? 3 : pathname === '/search' ? 1 : 0;
-  return <nav className="bottom-nav" aria-label="Основная навигация" data-instant={instant}>
-    <span className="bottom-nav__indicator" aria-hidden="true" style={{ transform: `translateX(${selected * 100}%)` }}/>
+  return <nav className="tab-bar" aria-label="Основная навигация" style={{ '--tab': selected }}>
+    <span className="tab-bar__indicator" aria-hidden="true"/>
     {tabs.map((tab, index) => <Link key={tab.to} to={tab.to}
       className={selected === index ? 'active' : undefined}
       aria-current={selected === index ? 'page' : undefined}
-      onClick={(event) => setInstant(event.detail === 0)}>
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+        event.preventDefault();
+        if (pathname !== tab.to) go(tab.to);
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}>
       <Icon name={tab.icon}/><span>{tab.label}</span>
     </Link>)}
   </nav>;
@@ -51,7 +56,7 @@ function BottomNav() {
 function AppRoutes() {
   const { pathname } = useLocation();
   useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [pathname]);
-  return <div className="page-transition" key={pathname}><Routes>
+  return <div className="route" key={pathname}><Routes>
     <Route path="/" element={<Home/>}/>
     <Route path="/search" element={<Search/>}/>
     <Route path="/support" element={<Support/>}/>
