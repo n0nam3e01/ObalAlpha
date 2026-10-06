@@ -38,8 +38,10 @@ router.patch('/', jwtMiddleware, async (req, res) => {
   const data = {};
   // Login identifiers need a separate verified-change flow, not profile PATCH.
   if (phone !== undefined || req.body.email !== undefined) return res.status(400).json({ error: 'contact_change_unavailable' });
-  if (typeof display_name === 'string' && display_name.trim()) data.display_name = display_name.trim();
-  if (typeof avatar_preset === 'string') data.avatar_preset = avatar_preset;
+  if (display_name !== undefined && (typeof display_name !== 'string' || !display_name.trim() || display_name.trim().length > 100)) return res.status(400).json({ error: 'name_invalid' });
+  if (avatar_preset !== undefined && (typeof avatar_preset !== 'string' || !/^[a-z0-9_-]{1,40}$/.test(avatar_preset))) return res.status(400).json({ error: 'avatar_invalid' });
+  if (display_name !== undefined) data.display_name = display_name.trim();
+  if (avatar_preset !== undefined) data.avatar_preset = avatar_preset;
   if (language && ['ru', 'kk'].includes(language)) data.language = language;
   if (typeof notifications === 'boolean') data.notifications = notifications;
 

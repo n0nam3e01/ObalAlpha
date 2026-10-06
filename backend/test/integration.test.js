@@ -130,6 +130,16 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal(me.boxes_saved, 1); assert.equal(me.money_saved, 1000);
     const stats = (await api('/venue/me', { venueToken: shop.venue_token })).data.today_stats;
     assert.equal(stats.revenue, 900);
+    assert.equal(typeof stats.waiting, 'number');
+    assert.equal((await api('/ratings', { method: 'POST', token: buyer.token, body: { order_id: second.id, stars: 6 } })).status, 400);
+    assert.equal((await api('/ratings', { method: 'POST', token: buyer.token, body: { order_id: second.id, stars: 5 } })).status, 201);
+    assert.equal((await api('/ratings', { method: 'POST', token: buyer.token, body: { order_id: second.id, stars: 4 } })).status, 409);
+    const history = (await api('/orders', { token: buyer.token })).data.past;
+    assert.equal(history.find((o) => o.id === second.id).rating.stars, 5);
+    noSecrets(history);
+    // Database CHECK constraints back up the API rules.
+    await assert.rejects(prisma.box.update({ where: { id: box.id }, data: { price: offer.original_price + 1 } }));
+    await assert.rejects(prisma.box.update({ where: { id: box.id }, data: { qty_left: -1 } }));
     const repeatable = (await api('/venue/boxes', { method: 'POST', venueToken: shop.venue_token, body: { ...offer, qty: 2 } })).data;
     assert.equal((await api('/admin/boxes/' + repeatable.id, { method: 'PATCH', token: adminToken, body: { is_approved: true } })).status, 200);
     const idempotencyKey = randomUUID();
@@ -148,11 +158,15 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     await expireBoxesAndCancelOrders();
     assert.equal((await prisma.box.findUnique({ where: { id: closed.id } })).status, 'EXPIRED');
     assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { phone: '+77001234567' } })).status, 400);
+    assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { display_name: 'x'.repeat(101) } })).status, 400);
+    assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { avatar_preset: '<img>' } })).status, 400);
+    assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { display_name: ' Әли ' } })).data.display_name, 'Әли');
     assert.equal((await api('/health')).status, 200);
     t.diagnostic('Real PostgreSQL transactions and HTTP endpoints passed; no mocked database.');
   } finally {
     // Only rows owned by this isolated test run, never a global reset or seed.
     await prisma.favorite.deleteMany({ where: { user_id: { in: userIds } } });
+    await prisma.rating.deleteMany({ where: { user_id: { in: userIds } } });
     await prisma.order.deleteMany({ where: { box: { venue_id: { in: venueIds } } } });
     await prisma.box.deleteMany({ where: { venue_id: { in: venueIds } } });
     await prisma.venue.deleteMany({ where: { id: { in: venueIds } } });

@@ -74,7 +74,8 @@ router.post('/', jwtMiddleware, rateLimit({ max: 20, key: (req) => req.user.user
 
 router.get('/', jwtMiddleware, async (req, res) => {
   const orders = await prisma.order.findMany({
-    where: { user_id: req.user.userId }, include, orderBy: { created_at: 'desc' },
+    where: { user_id: req.user.userId }, include: { ...include, rating: { select: { stars: true } } },
+    orderBy: { created_at: 'desc' }, take: 100,
   });
   res.json({ active: orders.filter((o) => ['RESERVED', 'PAID'].includes(o.status)),
     past: orders.filter((o) => !['RESERVED', 'PAID'].includes(o.status)) });

@@ -78,6 +78,7 @@ router.patch('/venues/:id', async (req, res) => {
   const b = req.body; const data = {};
   for (const key of ['is_active', 'is_approved']) if (b[key] !== undefined) { if (typeof b[key] !== 'boolean') return res.status(400).json({ error: 'field_invalid' }); data[key] = b[key]; }
   for (const key of ['name', 'address', 'contact_phone', 'description', 'district', 'photo_url']) if (b[key] !== undefined) { if (typeof b[key] !== 'string' || b[key].length > (key === 'description' ? 4000 : 2000)) return res.status(400).json({ error: 'field_invalid' }); data[key] = b[key]; }
+  if (b.photo_url && !/^https:\/\//.test(b.photo_url)) return res.status(400).json({ error: 'photo_invalid' });
   if (b.category !== undefined) { if (!categories.includes(b.category)) return res.status(400).json({ error: 'category_invalid' }); data.category = b.category; }
   if (b.commission_pct !== undefined) { data.commission_pct = toInt(b.commission_pct, { min: 0, max: 100 }); if (data.commission_pct === null) return res.status(400).json({ error: 'field_invalid' }); }
   if (!Object.keys(data).length) return res.status(400).json({ error: 'field_invalid' });

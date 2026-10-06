@@ -15,6 +15,8 @@ app.use(express.json({ limit: '256kb' }));
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store');
   res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'no-referrer');
   if (['POST', 'PATCH', 'PUT'].includes(req.method) &&
       (!req.body || typeof req.body !== 'object' || Array.isArray(req.body))) {
     return res.status(400).json({ error: 'json_body_required' });
