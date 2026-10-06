@@ -26,12 +26,12 @@ export default function Support() {
     setMessages((current) => [...current.slice(-38), { role: 'user', text: question }, { role: 'bot', text: reply }]);
     setText('');
   }
-  return <div className="consumer-shell"><main className="simple-page support-page" id="main-content"><header className="page-head"><p className="page-head__date">Поможем разобраться</p><h1 className="large-title">Поддержка</h1></header>
+  return <div className="consumer-shell"><main className="simple-page support-page" id="main-content"><header><p className="eyebrow">Поможем разобраться</p><h1>Поддержка</h1></header>
     <p className="support-caption">Автоматический помощник · ответы на частые вопросы</p>
     {telegram && <a className="button support-telegram" href={telegram} target="_blank" rel="noreferrer">Написать в Telegram ↗</a>}
     <div className="support-topics" role="group" aria-label="Частые вопросы">{topics.map((topic) => <button key={topic.label} onClick={() => ask(topic.label)}>{topic.label}</button>)}</div>
     <div className="support-messages" role="log" aria-label="Чат с помощником" aria-live="polite" aria-relevant="additions">{messages.map((message, index) => <div key={index} className={`support-message support-message--${message.role}`}><strong>{message.role === 'bot' ? 'Помощник Öbal' : 'Вы'}</strong><p>{message.text}</p></div>)}<div ref={end}/></div>
     <form className="support-input" onSubmit={(e) => { e.preventDefault(); ask(text); }}><label className="sr-only" htmlFor="support-message">Ваш вопрос</label><input id="support-message" value={text} onChange={(e) => setText(e.target.value)} placeholder="Напишите ваш вопрос" maxLength={1000}/><button disabled={!text.trim()} aria-label="Отправить вопрос">↑</button></form>
-    <p className="support-caption">Пароли и данные карты здесь не нужны.</p><Link className="link-button" to="/profile">Вернуться в профиль</Link>
+    <p className="support-caption">Пароли и данные карты здесь не нужны.</p><Link className="text-button" to="/profile">Вернуться в профиль</Link>
   </main></div>;
 }

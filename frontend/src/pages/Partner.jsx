@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getVenueToken, setVenueToken, venueAuth, venueFetch } from '../lib/venueApi';
-import { Brand, ConfirmSheet, CountUp, errorText, Icon, money } from '../ui';
+import { Brand, errorText, Icon, money } from '../ui';
 
 const boxStatus = { ACTIVE: 'В продаже', SOLD_OUT: 'Разобрали', EXPIRED: 'Снят' };
 
@@ -17,7 +17,6 @@ export default function Partner() {
   const [busy, setBusy] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingBox, setEditingBox] = useState(null);
-  const [closing, setClosing] = useState(null);
   const codeInput = useRef(null);
 
   const signOut = () => { setVenueToken(null); setLocalToken(null); setSession(null); };
@@ -53,9 +52,8 @@ export default function Partner() {
     } catch (err) { setError(errorText[err.code] || 'Не удалось подтвердить выдачу. Проверьте код и обновите заказы.'); }
     finally { setBusy(false); codeInput.current?.focus(); }
   }
-  async function closeOffer() {
-    const box = closing;
-    setClosing(null);
+  async function closeOffer(box) {
+    if (!window.confirm(`Снять «${box.title}» с продажи? Уже оформленные заказы сохранятся.`)) return;
     setBusy(true); setError('');
     try { await venueFetch('/boxes/' + box.id, { method: 'PATCH', body: JSON.stringify({ status: 'EXPIRED' }) }); await refresh(); }
     catch { setError('Не удалось снять набор с продажи. Обновите данные и попробуйте снова.'); }
@@ -63,10 +61,10 @@ export default function Partner() {
   }
 
   if (!token) return <main className="partner-login" id="main-content"><Brand partner/>
-    <form onSubmit={signIn}><span className="auth-copy__mark" aria-hidden="true"><Icon name="store" size={30}/></span><h1>Кабинет заведения</h1><p>Введите код, который вы получили при подключении к Öbal.</p>
+    <form onSubmit={signIn}><h1>Кабинет заведения</h1><p>Введите код, который вы получили при подключении к Öbal.</p>
       <label className="field"><span>Код заведения</span><input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoCapitalize="characters" spellCheck="false" required/></label>
       {error && <p role="alert" className="form-error">{error}</p>}
-      <button className="button button--primary button--block" disabled={busy}>{busy ? 'Входим…' : 'Открыть кабинет'}</button></form>
+      <button className="button" disabled={busy}>{busy ? 'Входим…' : 'Открыть кабинет'}</button></form>
     <Link to="/">Вернуться в приложение</Link></main>;
 
   if (!session) return <main className="simple-page" id="main-content"><p role="status">{error || 'Загружаем кабинет…'}</p><button type="button" className="text-button" onClick={signOut}>Вернуться ко входу</button></main>;
@@ -82,19 +80,14 @@ export default function Partner() {
     {notice && <p className="notice notice--ok partner-banner" role="status"><Icon name="check" size={18}/> {notice}</p>}
     <div className="partner-columns">
       <aside className="live-orders" aria-labelledby="pickup-title">
-        <div className="pickup-panel"><h2 id="pickup-title"><Icon name="bag" size={20}/> Выдача заказа</h2>
-        <form onSubmit={issue} className="pickup-form"><label className="field"><span>Код с экрана покупателя</span><input ref={codeInput} className="code-input" value={pickupCode} onChange={(e) => setPickupCode(e.target.value.replace(/\s/g, '').toUpperCase())} inputMode="numeric" autoComplete="off" placeholder="000000" required maxLength={12}/></label><button className="button button--primary" disabled={busy || !pickupCode.trim()}>Подтвердить выдачу</button></form></div>
-        <h3>Ждут получения <span className="count-badge">{waiting.length}</span></h3>
+        <h2 id="pickup-title">Выдача заказа</h2>
+        <form onSubmit={issue} className="pickup-form"><label className="field"><span>Код с экрана покупателя</span><input ref={codeInput} className="code-input" value={pickupCode} onChange={(e) => setPickupCode(e.target.value.replace(/\s/g, '').toUpperCase())} inputMode="numeric" autoComplete="off" placeholder="000000" required maxLength={12}/></label><button className="button" disabled={busy || !pickupCode.trim()}>Подтвердить выдачу</button></form>
+        <h3>Ждут получения · {waiting.length}</h3>
         {!waiting.length && <p className="muted">Пока никто не ждёт. Новые брони появятся здесь автоматически.</p>}
         {waiting.map((order) => <article key={order.id}><div><strong>{order.customer_name || order.user?.display_name || order.user?.name || 'Покупатель'}</strong><span>№{order.id}</span></div><p>{order.box.title} × {order.qty} · {money(order.amount)}</p><p>Выдача {order.box.pickup_start}–{order.box.pickup_end}{order.customer_phone && <> · <a href={`tel:${order.customer_phone}`}>{order.customer_phone}</a></>}</p></article>)}
       </aside>
       <div className="partner-main">
-        <section className="metrics" aria-label="Сегодня">
-          <div className="metric metric--coral"><span className="metric__icon"><Icon name="clock" size={18}/></span><span>Ждут получения</span><strong><CountUp value={waiting.length}/></strong></div>
-          <div className="metric metric--green"><span className="metric__icon"><Icon name="check" size={18}/></span><span>Выдано заказов</span><strong><CountUp value={stats.picked_up}/></strong></div>
-          <div className="metric metric--plum"><span className="metric__icon"><Icon name="wallet" size={18}/></span><span>Выручка после комиссии</span><strong><CountUp value={stats.revenue} format={money}/></strong></div>
-          <div className="metric metric--amber"><span className="metric__icon"><Icon name="leaf" size={18}/></span><span>Спасено порций</span><strong><CountUp value={stats.portions_saved}/></strong></div>
-        </section>
+        <section className="metrics" aria-label="Сегодня"><div><span>Ждут получения</span><strong>{waiting.length}</strong></div><div><span>Выдано заказов</span><strong>{stats.picked_up}</strong></div><div><span>Ваша выручка после комиссии</span><strong>{money(stats.revenue)}</strong></div><div><span>Спасено порций</span><strong>{stats.portions_saved}</strong></div></section>
         {showForm && <OfferForm key={editingBox?.id || 'new'} box={editingBox} venue={venue} onCancel={() => setShowForm(false)} onDone={() => { setShowForm(false); setEditingBox(null); setNotice('Набор отправлен на проверку. После одобрения его увидят покупатели.'); refresh().catch(() => setError('Набор сохранён, но список не обновился. Нажмите «Обновить».')); }}/>}
         <section className="offers"><h2>Наборы на сегодня</h2>
           {!boxes.length && <p className="muted">Предложений пока нет. Добавьте первый набор — это займёт минуту.</p>}
@@ -104,12 +97,11 @@ export default function Partner() {
             <span><small>Цена</small>{money(box.price)}</span>
             <span><small>Осталось</small>{box.qty_left} из {box.qty_total}</span>
             <span><small>Статус</small><b className={`offer-status${!box.is_approved && box.status === 'ACTIVE' ? ' is-wait' : box.status === 'ACTIVE' ? ' is-ok' : ''}`}>{!box.is_approved && box.status === 'ACTIVE' ? 'На проверке' : boxStatus[box.status]}</b></span>
-            <span className="offer-actions">{box.status === 'ACTIVE' && box._count.orders === 0 && <button type="button" className="text-button" disabled={busy} onClick={() => { setEditingBox(box); setShowForm(true); }}>Изменить</button>}{box.status === 'ACTIVE' && <button type="button" className="text-button" disabled={busy} onClick={() => setClosing(box)}>Снять</button>}</span>
+            <span className="offer-actions">{box.status === 'ACTIVE' && box._count.orders === 0 && <button type="button" className="text-button" disabled={busy} onClick={() => { setEditingBox(box); setShowForm(true); }}>Изменить</button>}{box.status === 'ACTIVE' && <button type="button" className="text-button" disabled={busy} onClick={() => closeOffer(box)}>Снять</button>}</span>
           </article>)}</div>
         </section>
       </div>
     </div>
-    <ConfirmSheet open={Boolean(closing)} title="Снять набор с продажи?" text={closing ? `«${closing.title}» исчезнет из ленты. Уже оформленные заказы сохранятся.` : ''} confirmLabel="Снять с продажи" onConfirm={closeOffer} onClose={() => setClosing(null)}/>
   </main>;
 }
 

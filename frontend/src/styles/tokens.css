@@ -1,108 +1,43 @@
 :root {
   color-scheme: light;
   --canvas: #fbf5f3;
-  --canvas-deep: #f4ebe8;
   --paper: #fffcfb;
   --paper-strong: #ffffff;
-  --paper-rgb: 255, 252, 251;
   --ink: #302629;
-  --ink-rgb: 48, 38, 41;
   --muted: #75615f;
-  --faint: #a3908d;
-  --line: rgba(72, 42, 44, .12);
-  --line-strong: rgba(72, 42, 44, .2);
+  --line: rgba(72, 42, 44, .14);
   --brand: #ca6666;
   --accent: #b25252;
-  --accent-dark: #964040;
   --accent-soft: #f5e1df;
-  --accent-glow: rgba(202, 102, 102, .32);
-  --plum: #2b2025;
-  --plum-2: #44303a;
+  --paper-rgb: 255, 252, 251;
   --surface-muted: #eee0dd;
-  --fill: rgba(118, 84, 86, .08);
-  --fill-strong: rgba(118, 84, 86, .14);
+  --accent-dark: #964040;
   --green: #246b48;
   --green-soft: #dcebdd;
-  --amber: #b9771a;
   --danger: #a53224;
-
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Space Mono', 'SF Mono', ui-monospace, Menlo, monospace;
-
-  /* Type scale follows Apple's iOS text styles. */
-  --t-large: clamp(30px, 7vw, 36px);
-  --t-title1: 26px;
-  --t-title2: 20px;
-  --t-title3: 18px;
-  --t-headline: 17px;
-  --t-body: 16px;
-  --t-callout: 15px;
-  --t-subhead: 14px;
-  --t-footnote: 13px;
-  --t-caption: 12px;
-
-  --gutter: clamp(20px, 5vw, 28px);
-  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
-  --radius-xs: 8px;
-  --radius-sm: 12px;
+  --radius-sm: 10px;
   --radius-md: 18px;
-  --radius-lg: 26px;
-  --radius-xl: 34px;
-
+  --radius-lg: 28px;
   --ease-out: cubic-bezier(.23, 1, .32, 1);
-  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
-  --spring: cubic-bezier(.34, 1.4, .64, 1);
-  --spring-soft: cubic-bezier(.3, 1.15, .5, 1);
-
-  --shadow-1: 0 1px 2px rgba(72, 38, 42, .06), 0 2px 8px rgba(72, 38, 42, .05);
-  --shadow-2: 0 2px 6px rgba(72, 38, 42, .06), 0 12px 32px rgba(72, 38, 42, .09);
-  --shadow-3: 0 8px 20px rgba(72, 38, 42, .08), 0 28px 64px rgba(72, 38, 42, .14);
-  --shadow: var(--shadow-2);
-  --glass: rgba(255, 252, 251, .72);
-  --glass-strong: rgba(255, 252, 251, .86);
-  --glass-edge: rgba(255, 255, 255, .7);
-  --blur: saturate(180%) blur(22px);
-}
-
-/* Real spring curves where the browser supports linear() easing. */
-@supports (transition-timing-function: linear(0, 1)) {
-  :root {
-    --spring: linear(0, .009, .035 2.1%, .141, .281 6.7%, .723 12.9%, .938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, .991, .977 51%, .974 53.8%, .975 57.1%, .997 69.8%, 1.003 76.9%, 1);
-    --spring-soft: linear(0, .006, .025 2.8%, .101 6.1%, .539 18.9%, .721 25.3%, .849 31.5%, .937 38.1%, .968 41.8%, .991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.6%, 1);
-  }
+  --shadow: 0 18px 50px rgba(90, 46, 50, .1);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --canvas: #161316;
-  --canvas-deep: #100d10;
-  --paper: #221e22;
-  --paper-strong: #2c262c;
-  --paper-rgb: 34, 30, 34;
+  --canvas: #191619;
+  --paper: #252125;
+  --paper-strong: #302a30;
+  --paper-rgb: 37, 33, 37;
   --ink: #faf1ee;
-  --ink-rgb: 250, 241, 238;
-  --muted: #c2aeaf;
-  --faint: #8f7e80;
-  --line: rgba(245, 225, 223, .1);
-  --line-strong: rgba(245, 225, 223, .18);
+  --muted: #c5b1b2;
+  --line: rgba(245, 225, 223, .17);
   --brand: #e58f8f;
-  --accent: #c25e5e;
+  --accent: #b25252;
   --accent-dark: #f1abab;
-  --accent-soft: #3f2830;
-  --accent-glow: rgba(229, 143, 143, .28);
-  --plum: #2a1f25;
-  --plum-2: #3b2a33;
-  --surface-muted: #302a30;
-  --fill: rgba(245, 225, 223, .07);
-  --fill-strong: rgba(245, 225, 223, .12);
+  --accent-soft: #492d34;
+  --surface-muted: #342d32;
   --green: #9bd7ad;
-  --green-soft: #1f3528;
-  --amber: #f0b35a;
+  --green-soft: #243c2f;
   --danger: #ffa396;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, .3);
-  --shadow-2: 0 2px 6px rgba(0, 0, 0, .25), 0 12px 32px rgba(0, 0, 0, .3);
-  --shadow-3: 0 8px 20px rgba(0, 0, 0, .3), 0 28px 64px rgba(0, 0, 0, .45);
-  --glass: rgba(34, 30, 34, .7);
-  --glass-strong: rgba(34, 30, 34, .86);
-  --glass-edge: rgba(255, 255, 255, .08);
+  --shadow: 0 18px 50px rgba(0, 0, 0, .28);
 }
