@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BrowserRouter, Link, Route, Routes, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { apiFetch } from './lib/api';
@@ -6,6 +6,8 @@ import { getVenueToken, setVenueToken, venueAuth, venueFetch } from './lib/venue
 import Admin from './screens/Admin/Admin';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Support from './screens/Support';
+import { useHomeScroll } from './lib/useHomeScroll';
+import './styles/home-scroll.css';
 
 const images = [
   'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=85',
@@ -100,6 +102,7 @@ function DealCard({ box, index }) {
 }
 
 function Home() {
+  const homeRef = useRef(null);
   const [boxes, setBoxes] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -119,22 +122,23 @@ function Home() {
     const haystack = `${box.title} ${box.venue.name}`.toLowerCase();
     return matchesCategory && haystack.includes(query.toLowerCase());
   }), [boxes, category, query]);
+  useHomeScroll(homeRef, `${view}:${loading}:${visible.map((box) => box.id).join(',')}`);
 
-  return <Shell><main className="home" id="main-content">
+  return <Shell><main ref={homeRef} className="home home--scroll" id="main-content">
     <section className="intro">
       <Link className="search-box search-entry" to="/search"><Icon name="search"/><span>Найти еду или заведение</span><Icon name="arrow" size={18}/></Link>
-      <div className="hero-copy"><p className="eyebrow">Еда с хорошим продолжением</p><h1>Заберите сегодня дешевле</h1><p>Еда из заведений рядом со скидкой. Заберите сегодня в указанное время.</p></div>
+      <div className="hero-copy"><span className="hero-media" aria-hidden="true"/><p className="eyebrow" data-scroll-reveal>Еда с хорошим продолжением</p><h1 data-scroll-reveal>Заберите сегодня дешевле</h1><p className="hero-description" data-scroll-reveal>Еда из заведений рядом со скидкой. Заберите сегодня в указанное время.</p><a className="hero-scroll-link" href="#today">К предложениям <span aria-hidden="true">↓</span></a></div>
     </section>
     <div className="category-row" aria-label="Категории">{Object.entries(categoryLabels).map(([key, label]) => <button key={key} className={category === key ? 'active' : ''} onClick={() => setCategory(key)}>{label}</button>)}</div>
-    <section className="feed-head"><div><p className="eyebrow">Рядом с вами</p><h2>Можно забрать сегодня</h2></div><div className="view-switch"><button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>Список</button><button className={view === 'map' ? 'active' : ''} onClick={() => setView('map')}>Карта</button></div></section>
+    <section className="feed-head" id="today" data-scroll-reveal><div><p className="eyebrow">Рядом с вами</p><h2>Можно забрать сегодня</h2></div><div className="view-switch"><button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>Список</button><button className={view === 'map' ? 'active' : ''} onClick={() => setView('map')}>Карта</button></div></section>
     {view === 'list'
-      ? <section className="deal-grid">{visible.map((box, index) => <DealCard key={box.id} box={box} index={index}/>)}</section>
+      ? <section className="deal-grid">{visible.map((box, index) => <div className="offer-reveal" key={box.id}><DealCard box={box} index={index}/></div>)}</section>
       : <GoogleMap boxes={visible}/>
     }
     {loading && <p role="status">Загружаем предложения…</p>}
     {error && <p className="form-error" role="alert">{error}</p>}
     {!loading && !error && !visible.length && <div className="empty"><Icon name="search" size={30}/><h3>{boxes.length ? 'Ничего не нашли' : 'Предложений пока нет'}</h3><p>{boxes.length ? 'Сбросьте фильтр или попробуйте другой запрос.' : 'Скоро здесь появятся наборы от заведений Астаны.'}</p>{boxes.length > 0 && <button onClick={() => { setCategory('ALL'); setQuery(''); }}>Показать всё</button>}</div>}
-    <section className="impact-strip"><Icon name="leaf" size={30}/><div><strong>Каждый заказ помогает</strong><p>Вы экономите, а хорошая еда не отправляется в мусор.</p></div></section>
+    <section className="impact-strip" data-scroll-reveal><Icon name="leaf" size={30}/><div><strong>Каждый заказ помогает</strong><p>Вы экономите, а хорошая еда не отправляется в мусор.</p></div></section>
   </main></Shell>;
 }
 

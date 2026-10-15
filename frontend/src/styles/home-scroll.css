@@ -1,0 +1,56 @@
+/* Scoped to Home; fixed navigation never inherits a transformed ancestor. */
+.home--scroll .hero-copy {
+  position: relative;
+  isolation: isolate;
+  min-height: 360px;
+  background: var(--ink);
+}
+.home--scroll .hero-media {
+  position: absolute;
+  inset: -40px 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(48, 26, 30, .9), rgba(48, 26, 30, .5)), url('https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=1400&q=90') center 56% / cover;
+}
+.home--scroll .hero-copy .eyebrow { color: rgba(255, 255, 255, .92); }
+.home--scroll .hero-description {
+  max-width: 440px;
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, .88);
+  font-size: 16px;
+  line-height: 1.55;
+}
+.hero-scroll-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  min-height: 44px;
+  margin-top: 18px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-underline-offset: 5px;
+}
+.hero-scroll-link:hover { text-decoration: underline; }
+.hero-scroll-link:focus-visible { outline-color: white; }
+.hero-scroll-link span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 50%;
+}
+.offer-reveal { min-width: 0; }
+.home--scroll .offer-reveal > .deal-card { display: block; height: 100%; animation: none; }
+@media (min-width: 521px) and (max-width: 760px) {
+  .home--scroll .offer-reveal > .deal-card { display: grid; }
+}
+@media (max-width: 767px) {
+  .home--scroll .hero-copy { min-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home--scroll .hero-media { transform: none !important; }
+  .home--scroll [data-scroll-reveal], .home--scroll .offer-reveal { opacity: 1 !important; transform: none !important; }
+}
