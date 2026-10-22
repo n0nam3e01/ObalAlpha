@@ -24,4 +24,3 @@ export function Brand({ partner = false }) {
 export function Shell({ children }) {
   return <div className="consumer-shell">{children}</div>;
 }
-
