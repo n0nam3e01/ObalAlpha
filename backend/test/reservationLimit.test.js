@@ -27,7 +27,7 @@ Module._load = function (id, ...args) {
 const router = require('../routes/orders');
 Module._load = load;
 const app = express();
-app.use((req, _res, next) => { req.body = { box_id: 9, idempotency_key: '0123456789abcdef' }; next(); });
+app.use((req, _res, next) => { req.body = { box_id: 9, idempotency_key: 'test-idempotency-key-0001' }; next(); });
 app.use(router);
 app.use((err, _req, res, _next) => res.status(err.status || 500).json({ error: err.message }));
 function request() {

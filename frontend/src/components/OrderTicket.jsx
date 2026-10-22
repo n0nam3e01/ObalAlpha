@@ -32,4 +32,3 @@ export default function OrderTicket({ order, highlighted = false, ticketRef, bus
     </div>
   </article>;
 }
-
