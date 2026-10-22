@@ -10,7 +10,7 @@ import Catalog from './screens/Catalog';
 import { Brand, Icon, Shell } from './components/Layout';
 import GoogleMap from './components/GoogleMap';
 import FoodPhoto from './components/FoodPhoto';
-import { rememberScroll, savedScroll } from './lib/catalogScroll';
+import { savedScroll } from './lib/catalogScroll';
 import Orders from './screens/Orders';
 import { useLiveRefresh } from './lib/useLiveRefresh';
 import SyncStatus from './components/SyncStatus';
@@ -268,11 +268,6 @@ function AppRoutes() {
   const navigation = useNavigationType();
   useLayoutEffect(() => {
     window.scrollTo({ top: navigation === 'POP' || state?.restoreScroll ? savedScroll(pathname + search) : 0, behavior: 'instant' });
-  }, [pathname, search]);
-  useEffect(() => {
-    const save = () => rememberScroll(pathname + search, window.scrollY);
-    window.addEventListener('scroll', save, { passive: true });
-    return () => window.removeEventListener('scroll', save);
   }, [pathname, search]);
   return <div className="page-transition" key={pathname}><Routes><Route path="/" element={<Catalog/>}/><Route path="/search" element={<Catalog discovery/>}/><Route path="/support" element={<Support/>}/><Route path="/box/:id" element={<Detail/>}/><Route path="/orders" element={<Orders/>}/><Route path="/profile" element={<Profile/>}/><Route path="/partner" element={<Partner/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Catalog/>}/></Routes></div>;
 }

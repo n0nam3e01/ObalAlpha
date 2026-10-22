@@ -3,7 +3,7 @@ import { useLocation, useNavigationType, useSearchParams } from 'react-router-do
 import { apiFetch } from '../lib/api';
 import { useLiveRefresh } from '../lib/useLiveRefresh';
 import { selectOffers } from '../lib/catalog';
-import { savedScroll } from '../lib/catalogScroll';
+import { rememberScroll, savedScroll } from '../lib/catalogScroll';
 import { Shell, Icon } from '../components/Layout';
 import DealCard from '../components/DealCard';
 import GoogleMap from '../components/GoogleMap';
@@ -53,6 +53,12 @@ export default function Catalog({ discovery = false }) {
       restored.current = true;
     }
   }, [sync.loading, boxes, navigation, location]);
+  useLayoutEffect(() => {
+    if (sync.loading) return;
+    const save = () => rememberScroll(location.pathname + location.search, window.scrollY);
+    window.addEventListener('scroll', save, { passive: true });
+    return () => window.removeEventListener('scroll', save);
+  }, [sync.loading, location.pathname, location.search]);
   function locate() {
     if (!navigator.geolocation) { setGeoMessage('Устройство не поддерживает определение места. Выберите район вручную.'); return; }
     setLocating(true); setGeoMessage('');

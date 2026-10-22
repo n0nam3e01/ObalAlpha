@@ -6,7 +6,7 @@ React/Vite → Express/Prisma → PostgreSQL. Только самовывоз, �
 
 ## Запуск
 
-Нужна PostgreSQL. Заполните `backend/.env` по `.env.example`: DATABASE_URL, DIRECT_URL и случайный JWT_SECRET.
+Нужны Node.js 22 или 24 и PostgreSQL. Заполните `backend/.env` по `.env.example`: DATABASE_URL, DIRECT_URL и случайный JWT_SECRET. Для автоматического перезапуска API при разработке используйте `npm run dev` (встроенный `node --watch`).
 
 ```powershell
 cd backend
