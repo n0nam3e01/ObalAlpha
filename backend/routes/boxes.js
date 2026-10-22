@@ -57,6 +57,10 @@ router.get('/', async (req, res) => {
 
   let boxes = await prisma.box.findMany({
     where,
+    take: 500,
+    orderBy: sort === 'cheapest'
+      ? [{ price: 'asc' }, { id: 'asc' }]
+      : [{ pickup_end: 'asc' }, { id: 'asc' }],
     include: {
       venue: { select: { id: true, name: true, category: true, address: true, district: true, geo_lat: true, geo_lng: true, photo_url: true, rating_avg: true, rating_count: true } },
       _count: { select: { orders: { where: { status: { in: ['RESERVED', 'PAID', 'PICKED_UP'] } } } } },
@@ -89,6 +93,9 @@ router.get('/', async (req, res) => {
     boxes.sort((a, b) => (a.distance_km ?? 999) - (b.distance_km ?? 999));
   }
 
+  // MVP ceiling: nearby sorts these 500 offers. Add spatial pagination before
+  // the active catalog grows beyond this bound; never load an unbounded catalog.
+  res.set('X-Result-Limit', '500');
   res.json(boxes);
 });
 

@@ -3,14 +3,16 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 
 test('PostgreSQL: registration, stock races, cancellation, pickup and isolation', {
-  skip: !process.env.TEST_DATABASE_URL,
+  skip: !process.env.TEST_DATABASE_URL && !process.env.CI,
 }, async (t) => {
+  assert.ok(process.env.TEST_DATABASE_URL, 'CI requires an isolated TEST_DATABASE_URL; integration tests must not silently skip');
   const url = new URL(process.env.TEST_DATABASE_URL);
   // Refuse any database not explicitly dedicated to tests.
   assert.match(url.pathname, /^\/obal_test(?:_\w+)?$/);
   process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
   process.env.DIRECT_URL = process.env.TEST_DATABASE_URL;
   process.env.JWT_SECRET = 'test-only-' + randomUUID();
+  process.env.CORS_ORIGIN = 'http://127.0.0.1:5173';
   const prisma = require('../lib/prisma');
   const app = require('../server');
   const { startOfToday, pickupInstant } = require('../lib/time');
@@ -21,18 +23,23 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
   const key = randomUUID();
   const userIds = [];
   const venueIds = [];
-  async function api(path, { method = 'GET', token, venueToken, body } = {}) {
+  async function api(path, { method = 'GET', token, venueToken, body, cookie, origin } = {}) {
     const response = await fetch(base + path, { method, headers: {
       'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}),
       ...(venueToken ? { 'X-Venue-Token': venueToken } : {}),
+      ...(cookie ? { Cookie: cookie } : {}), ...(origin ? { Origin: origin } : {}),
     }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
-    return { status: response.status, data: await response.json() };
+    return { status: response.status, data: await response.json(), cookie: response.headers.get('set-cookie')?.split(';')[0], cookieHeader: response.headers.get('set-cookie') };
   }
   function noSecrets(value) {
     const text = JSON.stringify(value);
     for (const field of ['venue_token', 'access_code', 'payout_details', 'password_hash', 'kaspi_info']) assert.ok(!text.includes('"' + field + '"'), field);
   }
   try {
+    const sessionSecurity = await prisma.$queryRaw`SELECT c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'CustomerSession' AND n.nspname = 'public'`;
+    assert.equal(sessionSecurity[0]?.relrowsecurity, true, 'Supabase session table must have RLS with no public policy');
+    const sessionPolicies = await prisma.$queryRaw`SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'CustomerSession'`;
+    assert.equal(sessionPolicies.length, 0);
     const credentials = { name: 'Тест Әли', email: key + '@example.test', password: 'correct-password-123' };
     const registration = await api('/auth/register', { method: 'POST', body: credentials });
     assert.equal(registration.status, 201);
@@ -46,7 +53,7 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal((await api('/auth/register', { method: 'POST', body: { name: {}, password: [] } })).status, 400);
     const other = await prisma.user.create({ data: { name: 'Other ' + key } });
     userIds.push(other.id);
-    const otherToken = require('../lib/auth').signJwt({ userId: other.id });
+    const otherToken = (await require('../lib/customerSessions').createCustomerSession(other.id)).token;
     const { hashPassword } = require('../lib/password');
     const admin = await prisma.user.create({ data: { name: 'Test Admin', username: 'test_' + key.replaceAll('-', '').slice(0, 20), role: 'ADMIN', password_hash: hashPassword('admin-test-password-123') } });
     userIds.push(admin.id);
@@ -127,6 +134,7 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal(issued.filter((r) => r.status === 200).length, 1);
     assert.ok(issued.every((r) => [200, 400, 409].includes(r.status)));
     const me = await prisma.user.findUnique({ where: { id: buyer.user.id } });
+    assert.ok((await prisma.order.findUnique({ where: { id: second.id } })).picked_up_at instanceof Date);
     assert.equal(me.boxes_saved, 1); assert.equal(me.money_saved, 1000);
     const stats = (await api('/venue/me', { venueToken: shop.venue_token })).data.today_stats;
     assert.equal(stats.revenue, 900);
@@ -161,6 +169,105 @@ test('PostgreSQL: registration, stock races, cancellation, pickup and isolation'
     assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { display_name: 'x'.repeat(101) } })).status, 400);
     assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { avatar_preset: '<img>' } })).status, 400);
     assert.equal((await api('/me', { method: 'PATCH', token: buyer.token, body: { display_name: ' Әли ' } })).data.display_name, 'Әли');
+
+    // A buyer lock must cover simultaneous bookings of DIFFERENT boxes.
+    const limited = await prisma.user.create({ data: { name: 'Limit ' + key } });
+    userIds.push(limited.id);
+    const limitedToken = (await require('../lib/customerSessions').createCustomerSession(limited.id)).token;
+    const limitBoxes = await Promise.all([shop, otherShop].map((v) => prisma.box.create({ data: {
+      ...offer, qty: undefined, venue_id: v.id, qty_total: 10, qty_left: 8,
+      pickup_date: startOfToday(), is_approved: true,
+    } })));
+    for (const [index, status] of ['RESERVED', 'PAID'].entries()) await prisma.order.create({ data: {
+      user_id: limited.id, box_id: limitBoxes[0].id, qty: 1, amount: 1000, commission: 100,
+      status, pickup_code: String(700000 + index), reserved_until: pickupInstant(startOfToday(), '23:59'),
+    } });
+    await prisma.order.create({ data: {
+      user_id: limited.id, box_id: limitBoxes[0].id, qty: 1, amount: 1000, commission: 100,
+      status: 'RESERVED', pickup_code: '700003', reserved_until: new Date(0),
+    } });
+    const limitKeys = [randomUUID(), randomUUID()];
+    const simultaneous = await Promise.all(limitBoxes.map((b, index) => api('/orders', {
+      method: 'POST', token: limitedToken, body: { box_id: b.id, idempotency_key: limitKeys[index] },
+    })));
+    assert.deepEqual(simultaneous.map((r) => r.status).sort(), [201, 409]);
+    const rejected = simultaneous.find((r) => r.status === 409);
+    assert.equal(rejected.data.error, 'active_order_limit');
+    const winningIndex = simultaneous.findIndex((r) => r.status === 201);
+    const limitedOrder = simultaneous[winningIndex].data;
+    assert.equal((await api('/orders', { method: 'POST', token: limitedToken, body: {
+      box_id: limitedOrder.box_id, idempotency_key: limitKeys[winningIndex],
+    } })).data.id, limitedOrder.id);
+    const owner = winningIndex === 0 ? shop : otherShop;
+    const foreign = winningIndex === 0 ? otherShop : shop;
+    const cancellation = { method: 'POST', venueToken: owner.venue_token, body: { reason: 'Набор недоступен' } };
+    assert.equal((await api('/venue/orders/' + limitedOrder.id + '/cancel', { ...cancellation, venueToken: foreign.venue_token })).status, 404);
+    assert.equal((await api('/venue/orders/' + limitedOrder.id + '/cancel', { ...cancellation, body: { reason: ' ' } })).status, 400);
+    const beforeCancel = (await prisma.box.findUnique({ where: { id: limitedOrder.box_id } })).qty_left;
+    const doubleCancel = await Promise.all([1, 2].map(() => api('/venue/orders/' + limitedOrder.id + '/cancel', cancellation)));
+    assert.deepEqual(doubleCancel.map((r) => r.status).sort(), [200, 409]);
+    const cancelledBox = await prisma.box.findUnique({ where: { id: limitedOrder.box_id } });
+    assert.equal(cancelledBox.qty_left, beforeCancel + 1);
+    assert.equal(cancelledBox.status, 'EXPIRED');
+    const cancelledTicket = (await api('/orders/' + limitedOrder.id, { token: limitedToken })).data;
+    assert.equal(cancelledTicket.cancelled_by, 'VENUE');
+    assert.equal(cancelledTicket.cancellation_reason, 'Набор недоступен');
+    assert.ok(cancelledTicket.cancelled_at);
+    const paidOrder = await prisma.order.findFirst({ where: { user_id: limited.id, status: 'PAID' } });
+    assert.equal((await api('/venue/orders/' + paidOrder.id + '/cancel', { ...cancellation, venueToken: shop.venue_token })).status, 409);
+
+    // Issuing and cancelling contend on the same conditional status transition.
+    const raceBox = await prisma.box.create({ data: {
+      ...offer, qty: undefined, venue_id: shop.id, qty_total: 1, qty_left: 0,
+      pickup_date: startOfToday(), status: 'SOLD_OUT',
+    } });
+    const raceOrder = await prisma.order.create({ data: {
+      user_id: limited.id, box_id: raceBox.id, qty: 1, amount: 1000, commission: 100,
+      pickup_code: '700004', reserved_until: pickupInstant(startOfToday(), '23:59'),
+    } });
+    const race = await Promise.all([
+      api('/venue/orders/' + raceOrder.id + '/pickup', { method: 'POST', venueToken: shop.venue_token, body: { code: raceOrder.pickup_code } }),
+      api('/venue/orders/' + raceOrder.id + '/cancel', { ...cancellation, venueToken: shop.venue_token }),
+    ]);
+    assert.equal(race.filter((r) => r.status === 200).length, 1);
+    assert.ok(race.every((r) => [200, 400, 409].includes(r.status)));
+    const raced = await prisma.order.findUnique({ where: { id: raceOrder.id } });
+    assert.equal((await prisma.box.findUnique({ where: { id: raceBox.id } })).qty_left, raced.status === 'CANCELLED' ? 1 : 0);
+    assert.equal((await prisma.user.findUnique({ where: { id: limited.id } })).boxes_saved, raced.status === 'PICKED_UP' ? 1 : 0);
+    const loginSession = () => api('/auth/login', { method: 'POST', body: { identifier: credentials.email, password: credentials.password } });
+    const sessionLogin = await loginSession();
+    assert.equal(sessionLogin.status, 200);
+    assert.match(sessionLogin.cookieHeader, /HttpOnly/i);
+    assert.match(sessionLogin.cookieHeader, /SameSite=Lax/i);
+    assert.match(sessionLogin.cookieHeader, /Path=\/api\/auth/i);
+    const claims = require('jsonwebtoken').decode(sessionLogin.data.token);
+    assert.equal(claims.exp - claims.iat, 15 * 60);
+    const persistedSession = await prisma.customerSession.findUnique({ where: { id: claims.sid } });
+    const refreshSecret = sessionLogin.cookie.split('=')[1];
+    assert.notEqual(persistedSession.refresh_hash, refreshSecret);
+    assert.equal(persistedSession.refresh_hash, require('../lib/customerSessions').refreshHash(refreshSecret));
+    assert.ok(!JSON.stringify(sessionLogin.data).includes(refreshSecret));
+    const refresh = (cookie, origin = 'http://127.0.0.1:5173') => api('/auth/refresh', { method: 'POST', cookie, origin, body: {} });
+    assert.equal((await refresh(sessionLogin.cookie, 'https://evil.example')).status, 403);
+    assert.equal((await refresh(sessionLogin.cookie)).status, 200);
+    const invalidRefresh = await refresh('obal_refresh=' + 'a'.repeat(64));
+    assert.equal(invalidRefresh.status, 401);
+    assert.equal(invalidRefresh.cookieHeader, null, 'a stale refresh response must not delete a newer login cookie');
+    const otherSession = await loginSession();
+    assert.equal(otherSession.status, 200);
+    assert.equal((await api('/auth/logout', { method: 'POST', token: sessionLogin.data.token, body: {} })).status, 200);
+    assert.equal((await api('/me', { token: sessionLogin.data.token })).status, 401);
+    assert.equal((await refresh(sessionLogin.cookie)).status, 401);
+    assert.equal((await api('/me', { token: otherSession.data.token })).status, 200);
+    assert.equal((await api('/me', { token: require('../lib/auth').signJwt({ userId: buyer.user.id }) })).status, 401);
+    assert.equal((await api('/auth/logout-all', { method: 'POST', token: buyer.token, body: {} })).status, 200);
+    assert.equal((await api('/me', { token: otherSession.data.token })).status, 401);
+    assert.equal((await refresh(otherSession.cookie)).status, 401);
+    const expiredSession = await require('../lib/customerSessions').createCustomerSession(other.id);
+    const expiredClaims = require('jsonwebtoken').decode(expiredSession.token);
+    await prisma.customerSession.update({ where: { id: expiredClaims.sid }, data: { expires_at: new Date(0) } });
+    assert.equal((await api('/me', { token: expiredSession.token })).status, 401);
+    assert.equal((await refresh('obal_refresh=' + expiredSession.secret)).status, 401);
     assert.equal((await api('/health')).status, 200);
     t.diagnostic('Real PostgreSQL transactions and HTTP endpoints passed; no mocked database.');
   } finally {

@@ -1,12 +1,14 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
-const { signJwt } = require('../lib/auth');
+const { signJwt, jwtMiddleware } = require('../lib/auth');
+const { createCustomerSession, setRefreshCookie, readRefreshCookie, refreshHash, requireSessionOrigin } = require('../lib/customerSessions');
 const { hashPassword, verifyPassword } = require('../lib/password');
 const { rateLimit } = require('../lib/rateLimit');
 const { randomBytes } = require('node:crypto');
 
 const router = Router();
 const authLimit = rateLimit({ windowMs: 60_000, max: 10 });
+router.use(requireSessionOrigin);
 
 const normalizeEmail = (value) => typeof value === 'string' ? value.trim().toLowerCase() || null : null;
 const normalizePhone = (value) => {
@@ -28,8 +30,10 @@ const publicUser = (user) => ({
   money_saved: user.money_saved,
 });
 
-function issueSession(user, res, status = 200) {
-  res.status(status).json({ token: signJwt({ userId: user.id }), user: publicUser(user) });
+async function issueSession(user, res, status = 200) {
+  const session = await createCustomerSession(user.id);
+  setRefreshCookie(res, session.secret);
+  res.status(status).json({ token: session.token, user: publicUser(user) });
 }
 
 router.post('/register', authLimit, async (req, res) => {
@@ -52,7 +56,7 @@ router.post('/register', authLimit, async (req, res) => {
   const user = await prisma.user.create({
     data: { name, display_name: name, email, phone, public_id: 'OB-' + randomBytes(6).toString('hex').toUpperCase(), password_hash: hashPassword(password), language: 'ru' },
   });
-  issueSession(user, res, 201);
+  await issueSession(user, res, 201);
 });
 
 router.post('/login', authLimit, async (req, res) => {
@@ -67,7 +71,26 @@ router.post('/login', authLimit, async (req, res) => {
   if (!user || user.role !== 'CUSTOMER' || !verifyPassword(password, user.password_hash)) {
     return res.status(401).json({ error: 'credentials_invalid' });
   }
-  issueSession(user, res);
+  await issueSession(user, res);
+});
+
+router.post('/refresh', rateLimit({ max: 60 }), async (req, res) => {
+  const secret = readRefreshCookie(req);
+  const session = secret && await prisma.customerSession.findFirst({ where: {
+    refresh_hash: refreshHash(secret), revoked_at: null, expires_at: { gt: new Date() }, user: { role: 'CUSTOMER' },
+  }, include: { user: true } });
+  // Never delete a cookie from a delayed rejection: another tab may have
+  // completed a newer login by the time this response reaches the browser.
+  if (!session) return res.status(401).json({ error: 'session_expired' });
+  res.json({ token: signJwt({ userId: session.user_id, sid: session.id }), user: publicUser(session.user) });
+});
+router.post('/logout', jwtMiddleware, async (req, res) => {
+  await prisma.customerSession.updateMany({ where: { id: req.user.sid, user_id: req.user.userId, revoked_at: null }, data: { revoked_at: new Date() } });
+  res.json({ ok: true });
+});
+router.post('/logout-all', jwtMiddleware, async (req, res) => {
+  await prisma.customerSession.updateMany({ where: { user_id: req.user.userId, revoked_at: null }, data: { revoked_at: new Date() } });
+  res.json({ ok: true });
 });
 
 router.post('/phone', (_req, res) => res.status(410).json({ error: 'password_required' }));

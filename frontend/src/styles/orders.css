@@ -1,0 +1,33 @@
+.order-list .order-ticket { display: block; padding: 22px; margin: 16px 0; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--paper); scroll-margin-top: 100px; }
+.order-list .order-ticket--selected { border: 2px solid var(--brand); }
+.order-ticket h2 { margin: 12px 0; font-size: 24px; overflow-wrap: anywhere; }
+.order-ticket h3 { margin: 12px 0; }
+.order-ticket p { line-height: 1.6; overflow-wrap: anywhere; }
+.order-ticket .order-confirmation { color: var(--green); font-size: 22px; font-weight: 800; }
+.order-ticket__code { padding: 20px 12px; margin: 20px 0; text-align: center; background: var(--accent-soft); border-radius: var(--radius-md); }
+.order-ticket__code > span { display: block; color: var(--muted); font-size: 14px; }
+.order-ticket .pickup-code { display: block; margin-top: 10px; padding: 0; color: var(--ink); background: transparent; font-size: clamp(40px, 11vw, 52px); font-variant-numeric: tabular-nums; letter-spacing: .09em; line-height: 1.25; overflow-wrap: anywhere; }
+.order-ticket__cancel { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.order-rating { display: grid; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.order-rating select { min-height: 44px; padding: 12px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 16px; }
+.order-route { width: 100%; text-align: center; }
+.order-ticket__support { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.order-ticket__support p { margin-top: 8px; font-size: 13px; }
+.order-ticket .cancellation-reason { padding: 12px; border-radius: var(--radius-sm); background: var(--accent-soft); }
+.sync-status { margin-bottom: 20px; font-size: 13px; color: var(--muted); }
+.sync-status p { line-height: 1.6; }
+.partner .sync-status { margin-inline: clamp(18px, 4vw, 48px); }
+.partner-columns > .live-orders { grid-column: 2; grid-row: 1; }
+.partner-columns > .offers { grid-column: 1; grid-row: 1; }
+.live-orders input { font-size: 28px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.live-orders article { overflow-wrap: anywhere; }
+.venue-cancel-form { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.venue-cancel-form textarea { min-height: 88px; resize: vertical; }
+.venue-cancel-form .button { width: 100%; }
+.queue-notice { margin: 16px 0; padding: 12px; background: var(--green-soft); color: var(--green); border-radius: var(--radius-sm); }
+@media (max-width: 1180px) {
+  .partner-columns > .live-orders, .partner-columns > .offers { grid-column: 1; grid-row: auto; }
+}
+@media (max-width: 520px) {
+  .order-list .order-ticket { padding: 18px 14px; }
+}

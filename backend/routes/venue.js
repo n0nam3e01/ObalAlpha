@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const prisma = require('../lib/prisma');
 const { startOfToday, endOfToday, todayInstant, pickupInstant } = require('../lib/time');
-const { pickupOrder } = require('../lib/orderTransitions');
+const { pickupOrder, cancelVenueOrder } = require('../lib/orderTransitions');
 const { toId, toInt } = require('../lib/params');
 const { rateLimit } = require('../lib/rateLimit');
 
@@ -41,7 +41,7 @@ async function computeTodayStats(venueId, commissionPct) {
       _sum: { qty_total: true },
     }),
     prisma.order.aggregate({
-      where: { box: { venue_id: venueId }, status: 'PICKED_UP', created_at: { gte: dayStart, lt: dayEnd } },
+      where: { box: { venue_id: venueId }, status: 'PICKED_UP', picked_up_at: { gte: dayStart, lt: dayEnd } },
       _count: true,
       _sum: { amount: true, qty: true, commission: true },
     }),
@@ -136,7 +136,7 @@ router.get('/payout', venueAuth, async (req, res) => {
     where: {
       box: { venue_id: req.venue.id },
       status: 'PICKED_UP',
-      created_at: { gte: since },
+      picked_up_at: { gte: since },
     },
     _sum: { amount: true, commission: true },
     _count: true,
@@ -312,12 +312,11 @@ router.get('/orders', venueAuth, async (req, res) => {
 
   const orders = await prisma.order.findMany({
     where: {
-      box: { venue_id: req.venue.id },
-      created_at: { gte: todayInstant(), lt: new Date(todayInstant().getTime() + 86400000) },
+      box: { venue_id: req.venue.id, pickup_date: { gte: today, lt: tomorrow } },
     },
     include: {
       user: { select: { id: true, display_name: true, name: true, phone: true } },
-      box: { select: { id: true, title: true, type: true, pickup_start: true, pickup_end: true } },
+      box: { select: { id: true, title: true, type: true, pickup_date: true, pickup_start: true, pickup_end: true } },
     },
     orderBy: { created_at: 'desc' },
   });
@@ -326,6 +325,13 @@ router.get('/orders', venueAuth, async (req, res) => {
 });
 
 // Shared pickup logic: mark an order PICKED_UP + credit the buyer's impact.
+router.post('/orders/:id/cancel', venueAuth, rateLimit({ max: 20 }), async (req, res) => {
+  const id = toId(req.params.id);
+  if (!id) return res.status(404).json({ error: 'order_not_found' });
+  await cancelVenueOrder(id, req.venue.id, req.body?.reason);
+  res.json({ ok: true });
+});
+
 async function doPickup(order) {
   await pickupOrder(order);
 }

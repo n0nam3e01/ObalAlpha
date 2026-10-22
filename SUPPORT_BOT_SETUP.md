@@ -1,5 +1,7 @@
 # Подключение бота поддержки Öbal
 
+Действующий публичный контакт, указанный владельцем проекта: [@Obalappbot](https://t.me/Obalappbot). Ссылка отображается в помощи и билетах заказов независимо от доступности API. Открытие ссылки не отправляет сообщение: покупатель пишет боту в Telegram сам. Состояние webhook и фактическая доставка сообщений по одной ссылке не подтверждены. Восстановление пароля через Telegram не включено: для него требуется отдельная подтверждённая привязка аккаунта.
+
 1. Создайте отдельного бота в @BotFather. Токен задайте в `SUPPORT_BOT_TOKEN` на Render и в локальном `backend/.env`. В GitHub и чат токен не отправляйте.
 2. На Render добавьте `SUPPORT_WEBHOOK_SECRET` и нажмите Generate. Для локальной настройки можно сгенерировать секрет командой `node scripts/configureSupportBot.js --generate-secret` в папке backend. Не отправляйте значение в чат или GitHub.
 3. Задайте `SUPPORT_WEBHOOK_URL=https://obal-api.onrender.com/api/support/telegram` и `SUPPORT_BOT_USERNAME` без @. После публикации API сам зарегистрирует webhook при запуске; ошибка Telegram не остановит работу приложения. При необходимости ручная настройка доступна командой `node scripts/configureSupportBot.js`. Отправьте боту `/id`, возьмите ваш числовой chat ID и задайте `SUPPORT_OWNER_CHAT_ID` на Render.
