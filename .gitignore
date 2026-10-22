@@ -6,11 +6,29 @@ dist/
 build/
 coverage/
 .vite/
+.test-runtime/
+frontend/test-results/
+frontend/playwright-report/
 
 # Env — never commit real secrets (templates stay tracked)
 .env
 .env.*
 !.env.example
+
+# Local credentials and private-key exports
+.aws/
+credentials.json
+service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+.pgpass
+.pg_service.conf
+backups/
+*.dump
+*.pgdump
+*.backup
 
 # Deploy
 .vercel/

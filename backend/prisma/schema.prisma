@@ -63,6 +63,20 @@ model User {
   orders    Order[]
   favorites Favorite[]
   ratings   Rating[]
+  sessions  CustomerSession[]
+}
+
+model CustomerSession {
+  id           String   @id @default(uuid())
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  refresh_hash String   @unique @db.VarChar(64)
+  expires_at   DateTime
+  revoked_at   DateTime?
+  created_at   DateTime @default(now())
+
+  @@index([user_id, revoked_at])
+  @@index([expires_at])
 }
 
 model Venue {
@@ -144,6 +158,10 @@ model Order {
   customer_name  String?
   customer_phone String?
   created_at     DateTime    @default(now())
+  picked_up_at   DateTime?
+  cancelled_at   DateTime?
+  cancelled_by   String?     @db.VarChar(16)
+  cancellation_reason String? @db.VarChar(500)
 
   rating Rating?
 
@@ -155,6 +173,7 @@ model Order {
   @@index([pickup_code])
   // FK — needed for the venue-scoped order queries and joins.
   @@index([box_id])
+  @@index([status, picked_up_at])
   @@unique([user_id, idempotency_key])
 }
 

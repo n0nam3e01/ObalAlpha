@@ -13,6 +13,7 @@ async function expireBoxesAndCancelOrders() {
   await prisma.order.updateMany({ where: {
     status: 'RESERVED', reserved_until: { lte: now },
   }, data: { status: 'NO_SHOW' } });
+  await prisma.customerSession.deleteMany({ where: { expires_at: { lte: now } } });
 }
 
 function startCron() {

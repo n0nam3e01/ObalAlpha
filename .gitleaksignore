@@ -1,0 +1,5 @@
+# False positive: deterministic booking idempotency fixture, not a credential.
+# Keep this exact historical fingerprint only; do not ignore the file/rule.
+023be08f31862c2703a894d71cc73759622f23db:backend/test/reservationLimit.test.js:generic-api-key:30
+# The same fixture appears in the deletion diff of its replacement commit.
+8a8b0fc1904f83ad0838a4d32b60062d7d794a4b:backend/test/reservationLimit.test.js:generic-api-key:30

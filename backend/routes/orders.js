@@ -33,6 +33,8 @@ router.post('/', jwtMiddleware, rateLimit({ max: 20, key: (req) => req.user.user
   let order;
   let created = false;
   try { order = await prisma.$transaction(async (tx) => {
+    // Serialize this buyer's bookings even when they target different boxes.
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${me.id} FOR UPDATE`;
     // Lock before reading price/window/stock; last-portion bookings serialize.
     await tx.$queryRaw`SELECT id FROM "Box" WHERE id = ${boxId} FOR UPDATE`;
     const afterLock = await previous(tx);
@@ -40,6 +42,10 @@ router.post('/', jwtMiddleware, rateLimit({ max: 20, key: (req) => req.user.user
       if (!sameRequest(afterLock)) throw Object.assign(new Error('idempotency_mismatch'), { status: 409 });
       return afterLock;
     }
+    const activeCount = await tx.order.count({ where: {
+      user_id: me.id, status: { in: ['RESERVED', 'PAID'] }, reserved_until: { gt: new Date() },
+    } });
+    if (activeCount >= 3) throw Object.assign(new Error('active_order_limit'), { status: 409 });
     const box = await tx.box.findFirst({
       where: { id: boxId, status: 'ACTIVE', is_approved: true, qty_left: { gte: quantity },
         pickup_date: startOfToday(), venue: { is_active: true, is_approved: true } },

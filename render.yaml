@@ -19,6 +19,10 @@ services:
         value: false
       - key: CORS_ORIGIN
         value: https://obal-alpha.vercel.app
+      # Current frontend/API use different sites. A same-origin /api proxy
+      # is preferable for browsers that block third-party cookies.
+      - key: SESSION_SAME_SITE
+        value: none
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL

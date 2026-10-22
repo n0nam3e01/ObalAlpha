@@ -3,14 +3,28 @@ const express = require('express');
 const cors = require('cors');
 const prisma = require('./lib/prisma');
 const { startCron } = require('./lib/cron');
-const { configureSupportWebhook } = require('./lib/supportBot');
+const { configureSupportWebhook, verifyWebhookSecret } = require('./lib/supportBot');
+const { rateLimit } = require('./lib/rateLimit');
 
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 0));
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://127.0.0.1:5173')
   .split(',').map((o) => o.trim()).filter(Boolean);
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+const apiLimit = rateLimit({ max: 600 });
+const healthLimit = rateLimit({ max: 120 });
+const webhookLimit = rateLimit({ max: 600 });
+// Limit before decoding bodies or reaching database-backed route handlers.
+app.use('/api', (req, res, next) => {
+  if (req.method === 'GET' && req.path === '/health') return healthLimit(req, res, next);
+  // Valid Telegram retries have their own bucket; spoofed webhook calls use the public quota.
+  if (req.method === 'POST' && req.path === '/support/telegram' &&
+      verifyWebhookSecret(req.get('X-Telegram-Bot-Api-Secret-Token'), process.env.SUPPORT_WEBHOOK_SECRET)) {
+    return webhookLimit(req, res, next);
+  }
+  return apiLimit(req, res, next);
+});
 app.use(express.json({ limit: '256kb' }));
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-store');
@@ -49,6 +63,10 @@ async function start() {
   }
   await prisma.$connect();
   const server = app.listen(Number(process.env.PORT || 3000), process.env.HOST || '0.0.0.0', () => console.log('Obal API listening'));
+  server.requestTimeout = 30_000;
+  server.headersTimeout = 15_000;
+  server.keepAliveTimeout = 5_000;
+  server.setTimeout(60_000, (socket) => socket.destroy());
   const scheduler = startCron();
   // Optional support setup must not take the marketplace API down on Telegram errors.
   configureSupportWebhook().then((username) => {
