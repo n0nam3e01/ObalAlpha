@@ -1,0 +1,39 @@
+.catalog .catalog-intro { padding: 18px 0 14px; }
+.catalog .catalog-intro h1 { font-size: clamp(24px, 6vw, 34px); line-height: 1.1; margin: 0 0 8px; }
+.catalog-intro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.catalog .category-row { margin: 12px 0; padding: 0 0 4px; gap: 8px; }
+.catalog .category-row button { flex-shrink: 0; padding: 8px 14px; }
+.catalog-controls { display: flex; gap: 10px; align-items: flex-start; }
+.catalog select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font-size: 16px; max-width: 100%; }
+.catalog-controls > label { flex: 1; min-width: 0; }
+.catalog-controls > label select { width: 100%; }
+.catalog-filters { flex: 1; min-width: 0; }
+.catalog summary { min-height: 44px; padding: 12px; cursor: pointer; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.catalog-filters > div { display: grid; gap: 12px; padding: 14px 0; }
+.catalog-checkbox { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; }
+.catalog-checkbox input { width: 20px; height: 20px; accent-color: var(--accent); }
+.catalog-venues { margin-top: 12px; }
+.catalog-venues .venue-grid { margin-top: 12px; }
+.catalog .feed-head { padding: 18px 0 12px; margin: 0; gap: 8px; }
+.catalog .feed-head h2 { font-size: 20px; }
+.catalog .catalog-count { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.catalog .deal-grid { padding: 0; }
+.food-photo-placeholder { display: flex; width: 100%; height: 100%; min-height: 120px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 18px; background: var(--accent-soft); color: var(--muted); text-align: center; }
+.food-photo-placeholder > span { color: var(--brand); font-size: 36px; font-weight: 900; letter-spacing: -.07em; }
+.food-photo-placeholder small { font-size: 12px; }
+.catalog .deal-card .eyebrow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog .deal-card h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 18px; }
+.catalog .deal-card__meta { font-size: 12px; }
+.catalog .empty a, .catalog .empty button { display: block; margin: 8px auto; }
+@media (max-width: 760px) {
+  .catalog .deal-card { display: grid; grid-template-columns: 104px minmax(0, 1fr); }
+  .catalog .deal-card__media { min-height: 170px; aspect-ratio: auto; }
+  .catalog .deal-card__body { padding: 14px; gap: 8px; }
+  .catalog .deal-card__left { display: none; }
+  .catalog .deal-card .price strong { font-size: 22px; }
+  .catalog .deal-card .price { flex-wrap: wrap; gap: 4px 8px; }
+  .catalog .deal-card__discount { padding: 5px 8px; font-size: 12px; }
+  .catalog .food-photo-placeholder { padding: 8px; }
+  .catalog .food-photo-placeholder > span { font-size: 30px; }
+  .catalog .food-photo-placeholder small { font-size: 11px; }
+}
