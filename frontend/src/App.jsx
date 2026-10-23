@@ -31,7 +31,8 @@ function AppHeader() {
   const { pathname } = useLocation();
   const { user } = useAuth();
   if (pathname === '/partner' || pathname === '/admin') return null;
-  return <header className="home-head app-header"><Brand/><span className="location"><Icon name="pin" size={18}/><span>Астана</span></span><Link className="avatar" to="/profile" aria-label="Профиль">{user ? (user.display_name || user.name || 'М')[0] : <Icon name="user" size={19}/>}</Link></header>;
+  const catalogPage = pathname === '/' || pathname === '/search';
+  return <header className={`home-head app-header${catalogPage ? ' app-header--catalog' : ''}`}><Brand/><span className="location"><Icon name="pin" size={18}/><span>Астана</span></span>{catalogPage && <nav className="catalog-desktop-nav" aria-label="Навигация по сайту"><Link to="/" aria-current={pathname === '/' ? 'page' : undefined}>Главная</Link><Link to="/search" aria-current={pathname === '/search' ? 'page' : undefined}>Поиск</Link><Link to="/orders">Мои заказы</Link></nav>}<Link className="avatar" to="/profile" aria-label="Профиль">{user ? (user.display_name || user.name || 'М')[0] : <Icon name="user" size={19}/>}</Link></header>;
 }
 
 function ThemeSettings() {

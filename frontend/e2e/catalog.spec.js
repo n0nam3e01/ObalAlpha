@@ -17,6 +17,14 @@ test('catalog preserves filters and position when returning from an offer', asyn
   await expect(page.locator('.deal-card')).toHaveCount(18);
   await expect(page.locator('.deal-card').first()).toContainText('Фото набора пока нет');
   await expect(page.locator('.deal-card').first().locator('.price')).toBeInViewport();
+  const price = await page.locator('.deal-card .price').first().boundingBox();
+  const navigation = await page.getByRole('navigation', { name: 'Основная навигация' }).boundingBox();
+  expect(price.y + price.height).toBeLessThan(navigation.y);
+  const media = await page.locator('.deal-card__media').first().boundingBox();
+  const stock = await page.locator('.deal-card__left').first().boundingBox();
+  expect(stock.y).toBeGreaterThanOrEqual(media.y);
+  expect(stock.y + stock.height).toBeLessThanOrEqual(media.y + media.height);
+  await page.screenshot({ path: '../.test-runtime/home-offers-mobile.png', fullPage: false });
   await page.locator('.deal-card').nth(12).scrollIntoViewIfNeeded();
   const before = await page.evaluate(() => window.scrollY);
   await page.locator('.deal-card').nth(12).click();
