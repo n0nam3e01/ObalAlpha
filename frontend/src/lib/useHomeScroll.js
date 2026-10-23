@@ -14,9 +14,10 @@ export function useHomeScroll(scope, offersKey) {
       reduced: '(prefers-reduced-motion: reduce)',
     }, ({ conditions }) => {
       if (conditions.reduced) return;
-      const hero = scope.current.querySelector('.hero-copy');
-      if (conditions.desktop) {
-        gsap.fromTo('.hero-media', { y: -24 }, {
+      const hero = scope.current.querySelector('.hero-copy, .catalog-intro');
+      const mediaElement = scope.current.querySelector('.hero-media, .catalog-art');
+      if (conditions.desktop && hero && mediaElement) {
+        gsap.fromTo(mediaElement, { y: -24 }, {
           y: 24, ease: 'none',
           scrollTrigger: {
             trigger: hero, start: 'clamp(top bottom)', end: 'bottom top',
